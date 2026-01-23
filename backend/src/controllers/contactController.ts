@@ -32,7 +32,7 @@ export const getContacts = async (req: AuthRequest, res: Response) => {
       };
     }
 
-    const [contacts, total] = await Promise.all([
+    const [contactsData, total] = await Promise.all([
       prisma.contact.findMany({
         where,
         include: {
@@ -56,6 +56,12 @@ export const getContacts = async (req: AuthRequest, res: Response) => {
       }),
       prisma.contact.count({ where })
     ]);
+
+    // Flatten tags structure for easier frontend consumption
+    const contacts = contactsData.map(contact => ({
+      ...contact,
+      tags: contact.tags.map(ct => ct.tag)
+    }));
 
     res.json({
       success: true,
@@ -83,7 +89,7 @@ export const getContact = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user!.id;
 
-    const contact = await prisma.contact.findFirst({
+    const contactData = await prisma.contact.findFirst({
       where: {
         id,
         createdById: userId
@@ -119,12 +125,18 @@ export const getContact = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    if (!contact) {
+    if (!contactData) {
       return res.status(404).json({
         success: false,
         message: 'Contact not found'
       });
     }
+
+    // Flatten tags structure
+    const contact = {
+      ...contactData,
+      tags: contactData.tags.map(ct => ct.tag)
+    };
 
     res.json({
       success: true,
@@ -154,7 +166,7 @@ export const createContact = async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
 
     // Create contact with tags
-    const contact = await prisma.contact.create({
+    const contactData = await prisma.contact.create({
       data: {
         firstName,
         lastName,
@@ -178,6 +190,12 @@ export const createContact = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Flatten tags structure
+    const contact = {
+      ...contactData,
+      tags: contactData.tags.map(ct => ct.tag)
+    };
+
     // Auto-add to lists based on tags
     if (tagIds.length > 0) {
       const autoLists = await prisma.list.findMany({
@@ -197,6 +215,22 @@ export const createContact = async (req: AuthRequest, res: Response) => {
           }).catch(() => {}) // Ignore duplicates
         )
       );
+    }
+
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('newContact', {
+        id: contact.id,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email,
+        phone: contact.phone,
+        address: contact.address,
+        notes: contact.notes,
+        tags: contact.tags,
+        createdById: userId
+      });
     }
 
     res.status(201).json({
@@ -244,7 +278,7 @@ export const updateContact = async (req: AuthRequest, res: Response) => {
     }
 
     // Update contact and tags
-    const contact = await prisma.contact.update({
+    const contactData = await prisma.contact.update({
       where: { id },
       data: {
         firstName,
@@ -268,6 +302,12 @@ export const updateContact = async (req: AuthRequest, res: Response) => {
         }
       }
     });
+
+    // Flatten tags structure
+    const contact = {
+      ...contactData,
+      tags: contactData.tags.map(ct => ct.tag)
+    };
 
     // Update list memberships based on new tags
     await prisma.listMember.deleteMany({
@@ -331,6 +371,16 @@ export const deleteContact = async (req: AuthRequest, res: Response) => {
     await prisma.contact.delete({
       where: { id }
     });
+
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('contactDeleted', {
+        id: contact.id,
+        firstName: contact.firstName,
+        lastName: contact.lastName
+      });
+    }
 
     res.json({
       success: true,

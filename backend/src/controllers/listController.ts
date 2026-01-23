@@ -6,6 +6,7 @@ import { AuthRequest } from '../middleware/auth';
 export const getLists = async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, search, isAutomatic } = req.query;
+    const userId = req.user!.id;
     
     const skip = (Number(page) - 1) * Number(limit);
     
@@ -19,12 +20,19 @@ export const getLists = async (req: AuthRequest, res: Response) => {
       where.isAutomatic = isAutomatic === 'true';
     }
 
+    // Filter lists to only show those with contacts belonging to the user
+    // or automatic lists (which are global but only show contacts user owns)
     const [lists, total] = await Promise.all([
       prisma.list.findMany({
         where,
         include: {
           tag: true,
           members: {
+            where: {
+              contact: {
+                createdById: userId
+              }
+            },
             include: {
               contact: {
                 select: {
@@ -39,7 +47,13 @@ export const getLists = async (req: AuthRequest, res: Response) => {
           },
           _count: {
             select: {
-              members: true
+              members: {
+                where: {
+                  contact: {
+                    createdById: userId
+                  }
+                }
+              }
             }
           }
         },
@@ -157,6 +171,18 @@ export const createList = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('newList', {
+        id: list.id,
+        name: list.name,
+        description: list.description,
+        isAutomatic: list.isAutomatic,
+        memberCount: list.members?.length || 0
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'List created successfully',
@@ -263,13 +289,23 @@ export const deleteList = async (req: AuthRequest, res: Response) => {
     if (list.isAutomatic) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete automatic lists'
+        message: 'Cannot delete automatic lists. These are managed by their associated tags.',
+        details: 'Automatic lists are created when tags are created and can only be deleted by deleting the associated tag.'
       });
     }
 
     await prisma.list.delete({
       where: { id }
     });
+
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('listDeleted', {
+        id: list.id,
+        name: list.name
+      });
+    }
 
     res.json({
       success: true,
@@ -319,17 +355,19 @@ export const addContactToList = async (req: AuthRequest, res: Response) => {
       message: 'Contact added to list successfully'
     });
   } catch (error) {
-    if (error.code === 'P2002') {
-      return res.status(400).json({
-        success: false,
-        message: 'Contact is already in this list'
-      });
+    if (error instanceof Error && 'code' in error) {
+      if ((error as any).code === 'P2002') {
+        return res.status(400).json({
+          success: false,
+          message: 'Contact is already in this list'
+        });
+      }
     }
 
     console.error('Add contact to list error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add contact to list'
+      message: 'An unexpected error occurred'
     });
   }
 };

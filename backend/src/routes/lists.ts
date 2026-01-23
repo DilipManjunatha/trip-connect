@@ -10,18 +10,20 @@ import {
   listValidation
 } from '../controllers/listController';
 import { authenticate } from '../middleware/auth';
+import { requireAdmin } from '../middleware/authorize';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
 
-router.get('/', getLists);
-router.get('/:id', getList);
-router.post('/', listValidation, createList);
-router.put('/:id', listValidation, updateList);
-router.delete('/:id', deleteList);
-router.post('/:id/contacts', addContactToList);
-router.delete('/:id/contacts/:contactId', removeContactFromList);
+// List management is admin-only
+router.get('/', requireAdmin, getLists);
+router.get('/:id', requireAdmin, getList);
+router.post('/', requireAdmin, listValidation, createList);
+router.put('/:id', requireAdmin, listValidation, updateList);
+router.delete('/:id', requireAdmin, deleteList);
+router.post('/:id/contacts', requireAdmin, addContactToList);
+router.delete('/:id/contacts/:contactId', requireAdmin, removeContactFromList);
 
 export default router;

@@ -8,16 +8,18 @@ import {
   tagValidation
 } from '../controllers/tagController';
 import { authenticate } from '../middleware/auth';
+import { requireAdmin } from '../middleware/authorize';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
 
-router.get('/', getTags);
-router.get('/:id', getTag);
-router.post('/', tagValidation, createTag);
-router.put('/:id', tagValidation, updateTag);
-router.delete('/:id', deleteTag);
+// Tag management is admin-only
+router.get('/', requireAdmin, getTags);
+router.get('/:id', requireAdmin, getTag);
+router.post('/', requireAdmin, tagValidation, createTag);
+router.put('/:id', requireAdmin, tagValidation, updateTag);
+router.delete('/:id', requireAdmin, deleteTag);
 
 export default router;

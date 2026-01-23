@@ -151,6 +151,18 @@ export const createTag = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('newTag', {
+        id: tag.id,
+        name: tag.name,
+        value: tag.value,
+        color: tag.color,
+        description: tag.description
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Tag created successfully',
@@ -274,6 +286,15 @@ export const deleteTag = async (req: AuthRequest, res: Response) => {
     await prisma.tag.delete({
       where: { id }
     });
+
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('tagDeleted', {
+        id: tag.id,
+        name: tag.name
+      });
+    }
 
     res.json({
       success: true,
