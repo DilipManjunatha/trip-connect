@@ -32,5 +32,32 @@ allprojects {
             // Android JSC is installed from npm
             url("$rootDir/../node_modules/jsc-android/dist")
         }
+        maven {
+            // JitPack for third-party dependencies like numberpickerview
+            url("https://www.jitpack.io")
+        }
+    }
+}
+
+subprojects {
+    afterEvaluate { project ->
+        // Fix for packages that reference com.facebook.react:react-native:+ which doesn't exist
+        // In RN 0.73, we use com.facebook.react:react-android instead
+        if (project.hasProperty("android")) {
+            project.configurations.all {
+                resolutionStrategy {
+                    // Force react-android version
+                    force "com.facebook.react:react-android:${rootProject.ext.reactNativeVersion}"
+                    
+                    // Substitute react-native dependency with react-android
+                    eachDependency { details ->
+                        if (details.requested.group == 'com.facebook.react' && details.requested.name == 'react-native') {
+                            details.useTarget group: 'com.facebook.react', name: 'react-android', version: "${rootProject.ext.reactNativeVersion}"
+                            details.because "react-native is not published as a Maven artifact in RN 0.73, use react-android instead"
+                        }
+                    }
+                }
+            }
+        }
     }
 }
