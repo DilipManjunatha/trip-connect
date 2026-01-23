@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
+import { SmartListManager } from '../utils/smartListManager';
 
 export const getContacts = async (req: AuthRequest, res: Response) => {
   try {
@@ -196,26 +197,14 @@ export const createContact = async (req: AuthRequest, res: Response) => {
       tags: contactData.tags.map(ct => ct.tag)
     };
 
-    // Auto-add to lists based on tags
-    if (tagIds.length > 0) {
-      const autoLists = await prisma.list.findMany({
-        where: {
-          tagId: { in: tagIds },
-          isAutomatic: true
-        }
-      });
-
-      await Promise.all(
-        autoLists.map(list =>
-          prisma.listMember.create({
-            data: {
-              listId: list.id,
-              contactId: contact.id
-            }
-          }).catch(() => {}) // Ignore duplicates
-        )
-      );
-    }
+    // Add contact to smart lists for each tag
+    // This will create lists if they don't exist and at least one contact has the tag
+    console.log(`📌 Adding contact ${contact.id} to ${tagIds.length} tag smart lists`);
+    await Promise.all(
+      tagIds.map((tagId: string) => 
+        SmartListManager.addContactToTagList(tagId, contact.id)
+      )
+    );
 
     // Emit real-time event to all connected users
     const io = req.app.get('socketio');
@@ -267,6 +256,11 @@ export const updateContact = async (req: AuthRequest, res: Response) => {
       where: {
         id,
         createdById: userId
+      },
+      include: {
+        tags: {
+          select: { tagId: true }
+        }
       }
     });
 
@@ -276,6 +270,9 @@ export const updateContact = async (req: AuthRequest, res: Response) => {
         message: 'Contact not found'
       });
     }
+
+    // Get old tags BEFORE updating
+    const oldTagIds = existingContact.tags.map(ct => ct.tagId);
 
     // Update contact and tags
     const contactData = await prisma.contact.update({
@@ -309,30 +306,26 @@ export const updateContact = async (req: AuthRequest, res: Response) => {
       tags: contactData.tags.map(ct => ct.tag)
     };
 
-    // Update list memberships based on new tags
-    await prisma.listMember.deleteMany({
-      where: { contactId: id }
-    });
+    // Find tags that were removed
+    const removedTagIds = oldTagIds.filter((tagId: string) => !tagIds.includes(tagId));
+    // Find tags that were added
+    const addedTagIds = tagIds.filter((tagId: string) => !oldTagIds.includes(tagId));
 
-    if (tagIds.length > 0) {
-      const autoLists = await prisma.list.findMany({
-        where: {
-          tagId: { in: tagIds },
-          isAutomatic: true
-        }
-      });
+    console.log(`🔄 Contact ${id} tag changes - Added: ${addedTagIds.length}, Removed: ${removedTagIds.length}`);
 
-      await Promise.all(
-        autoLists.map(list =>
-          prisma.listMember.create({
-            data: {
-              listId: list.id,
-              contactId: id
-            }
-          }).catch(() => {}) // Ignore duplicates
-        )
-      );
-    }
+    // Remove contact from smart lists for removed tags
+    await Promise.all(
+      removedTagIds.map((tagId: string) => 
+        SmartListManager.removeContactFromTagList(tagId, id)
+      )
+    );
+
+    // Add contact to smart lists for added tags
+    await Promise.all(
+      addedTagIds.map((tagId: string) => 
+        SmartListManager.addContactToTagList(tagId, id)
+      )
+    );
 
     res.json({
       success: true,
@@ -358,6 +351,11 @@ export const deleteContact = async (req: AuthRequest, res: Response) => {
       where: {
         id,
         createdById: userId
+      },
+      include: {
+        tags: {
+          select: { tagId: true }
+        }
       }
     });
 
@@ -368,9 +366,19 @@ export const deleteContact = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Get tag IDs before deletion
+    const tagIds = contact.tags.map(ct => ct.tagId);
+
+    // Delete contact (this will cascade delete ContactTag and ListMember relationships)
     await prisma.contact.delete({
       where: { id }
     });
+
+    // Sync smart lists for all tags this contact had
+    // This will remove the contact from lists and delete empty lists
+    await Promise.all(
+      tagIds.map((tagId: string) => SmartListManager.syncTagList(tagId))
+    );
 
     // Emit real-time event to all connected users
     const io = req.app.get('socketio');

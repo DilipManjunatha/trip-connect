@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
+import { SmartListManager } from '../utils/smartListManager';
 
 export const getTags = async (req: AuthRequest, res: Response) => {
   try {
@@ -141,15 +142,8 @@ export const createTag = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // Create automatic list for this tag
-    await prisma.list.create({
-      data: {
-        name: value ? `${name}: ${value}` : name,
-        description: `Automatic list for ${name}${value ? ` (${value})` : ''} tag`,
-        isAutomatic: true,
-        tagId: tag.id
-      }
-    });
+    // Note: Smart lists are created automatically when contacts are tagged
+    // No list is created here - it will be created when first contact gets this tag
 
     // Emit real-time event to all connected users
     const io = req.app.get('socketio');
@@ -228,17 +222,8 @@ export const updateTag = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // Update automatic list name if it exists
-    await prisma.list.updateMany({
-      where: {
-        tagId: id,
-        isAutomatic: true
-      },
-      data: {
-        name: value ? `${name}: ${value}` : name,
-        description: `Automatic list for ${name}${value ? ` (${value})` : ''} tag`
-      }
-    });
+    // Update smart list name if it exists
+    await SmartListManager.updateTagList(id);
 
     res.json({
       success: true,
@@ -276,13 +261,10 @@ export const deleteTag = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    if (tag._count.contacts > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete tag that is assigned to contacts'
-      });
-    }
+    // Delete the smart list for this tag (if it exists)
+    await SmartListManager.deleteTagList(id);
 
+    // Delete the tag (this will cascade delete ContactTag relationships)
     await prisma.tag.delete({
       where: { id }
     });

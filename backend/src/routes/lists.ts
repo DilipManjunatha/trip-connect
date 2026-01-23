@@ -7,6 +7,7 @@ import {
   deleteList,
   addContactToList,
   removeContactFromList,
+  cleanupEmptyLists,
   listValidation
 } from '../controllers/listController';
 import { authenticate } from '../middleware/auth';
@@ -25,5 +26,6 @@ router.put('/:id', requireAdmin, listValidation, updateList);
 router.delete('/:id', requireAdmin, deleteList);
 router.post('/:id/contacts', requireAdmin, addContactToList);
 router.delete('/:id/contacts/:contactId', requireAdmin, removeContactFromList);
+router.post('/cleanup', requireAdmin, cleanupEmptyLists);
 
 export default router;

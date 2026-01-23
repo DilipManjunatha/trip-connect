@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { SmartListManager } from '../src/utils/smartListManager';
 
 const prisma = new PrismaClient();
 
@@ -94,23 +95,8 @@ async function main() {
     })
   ]);
 
-  // Create automatic lists for tags
-  for (const tag of tags) {
-    const existingList = await prisma.list.findFirst({
-      where: { tagId: tag.id, isAutomatic: true }
-    });
-
-    if (!existingList) {
-      await prisma.list.create({
-        data: {
-          name: `${tag.name}: ${tag.value}`,
-          description: `Automatic list for ${tag.name} (${tag.value}) tag`,
-          isAutomatic: true,
-          tagId: tag.id
-        }
-      });
-    }
-  }
+  // Note: Smart lists are created automatically when contacts are tagged
+  // No empty lists are created here - they will be created when contacts get tags
 
   // Create sample contacts
   const contacts = await Promise.all([
@@ -167,29 +153,10 @@ async function main() {
     })
   ]);
 
-  // Add contacts to their respective automatic lists
-  for (const contact of contacts) {
-    const contactWithTags = await prisma.contact.findUnique({
-      where: { id: contact.id },
-      include: { tags: true }
-    });
-
-    if (contactWithTags) {
-      for (const contactTag of contactWithTags.tags) {
-        const list = await prisma.list.findFirst({
-          where: { tagId: contactTag.tagId, isAutomatic: true }
-        });
-
-        if (list) {
-          await prisma.listMember.create({
-            data: {
-              listId: list.id,
-              contactId: contact.id
-            }
-          }).catch(() => {}); // Ignore duplicates
-        }
-      }
-    }
+  // Sync smart lists for all tags - this will create lists and add contacts
+  // Lists are only created if contacts have those tags
+  for (const tag of tags) {
+    await SmartListManager.syncTagList(tag.id);
   }
 
   // Create sample trip group

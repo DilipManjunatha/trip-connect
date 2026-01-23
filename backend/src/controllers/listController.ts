@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
+import { SmartListManager } from '../utils/smartListManager';
 
 export const getLists = async (req: AuthRequest, res: Response) => {
   try {
@@ -21,55 +22,77 @@ export const getLists = async (req: AuthRequest, res: Response) => {
     }
 
     // Filter lists to only show those with contacts belonging to the user
-    // or automatic lists (which are global but only show contacts user owns)
-    const [lists, total] = await Promise.all([
-      prisma.list.findMany({
-        where,
-        include: {
-          tag: true,
-          members: {
-            where: {
-              contact: {
-                createdById: userId
-              }
-            },
-            include: {
-              contact: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  email: true,
-                  avatar: true
-                }
-              }
-            }
-          },
-          _count: {
-            select: {
-              members: {
-                where: {
-                  contact: {
-                    createdById: userId
-                  }
-                }
+    // For smart lists (isAutomatic: true), only show if they have at least one contact with the tag
+    const allLists = await prisma.list.findMany({
+      where,
+      include: {
+        tag: {
+          include: {
+            _count: {
+              select: {
+                contacts: true
               }
             }
           }
         },
-        skip,
-        take: Number(limit),
-        orderBy: {
-          createdAt: 'desc'
+        members: {
+          where: {
+            contact: {
+              createdById: userId
+            }
+          },
+          include: {
+            contact: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                avatar: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            members: {
+              where: {
+                contact: {
+                  createdById: userId
+                }
+              }
+            }
+          }
         }
-      }),
-      prisma.list.count({ where })
-    ]);
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Filter out empty smart lists (lists with no members and no contacts with the tag)
+    const filteredLists = allLists.filter(list => {
+      // Manual lists are always shown (even if empty)
+      if (!list.isAutomatic) {
+        return true;
+      }
+      
+      // Smart lists: only show if they have members OR if contacts have the tag
+      const hasMembers = list._count.members > 0;
+      const tagContactCount = list.tag?._count?.contacts ?? 0;
+      const hasContactsWithTag = tagContactCount > 0;
+      
+      return hasMembers || hasContactsWithTag;
+    });
+
+    // Apply pagination after filtering
+    const paginatedLists = filteredLists.slice(skip, skip + Number(limit));
+    const total = filteredLists.length;
 
     res.json({
       success: true,
       data: {
-        lists,
+        lists: paginatedLists,
         pagination: {
           page: Number(page),
           limit: Number(limit),
@@ -368,6 +391,22 @@ export const addContactToList = async (req: AuthRequest, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'An unexpected error occurred'
+    });
+  }
+};
+
+export const cleanupEmptyLists = async (req: AuthRequest, res: Response) => {
+  try {
+    await SmartListManager.cleanupEmptyLists();
+    res.json({
+      success: true,
+      message: 'Empty lists cleaned up successfully'
+    });
+  } catch (error) {
+    console.error('Cleanup empty lists error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cleanup empty lists'
     });
   }
 };

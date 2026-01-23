@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { verifyToken } from './utils/auth';
 import prisma from './utils/prisma';
+import { SmartListManager } from './utils/smartListManager';
 
 // Routes
 import authRoutes from './routes/auth';
@@ -233,6 +234,21 @@ app.get('/api/health', (req, res) => {
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
+
+// Cleanup empty smart lists on startup
+async function startupCleanup() {
+  try {
+    console.log('🧹 Cleaning up empty smart lists...');
+    await SmartListManager.cleanupEmptyLists();
+    console.log('✅ Smart list cleanup completed');
+  } catch (error) {
+    console.error('❌ Error during smart list cleanup:', error);
+    // Don't exit - continue server startup even if cleanup fails
+  }
+}
+
+// Run cleanup on startup
+startupCleanup();
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
