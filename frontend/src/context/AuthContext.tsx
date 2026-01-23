@@ -93,9 +93,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           dispatch({ type: 'AUTH_START' });
           const response = await authAPI.getProfile();
           if (response.success && response.data) {
+            // Always use fresh user data from server, ignore cached localStorage data
+            const freshUser = response.data.user;
+            localStorage.setItem('user', JSON.stringify(freshUser)); // Update localStorage with fresh data
             dispatch({
               type: 'AUTH_SUCCESS',
-              payload: { user: response.data.user, token },
+              payload: { user: freshUser, token },
             });
           } else {
             localStorage.removeItem('token');

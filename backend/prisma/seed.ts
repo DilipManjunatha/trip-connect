@@ -27,14 +27,16 @@ async function main() {
   
   const demoUser = await prisma.user.upsert({
     where: { email: 'demo@tripconnect.com' },
-    update: {},
+    update: {
+      role: 'ADMIN' // Ensure demo user always has admin role
+    },
     create: {
       email: 'demo@tripconnect.com',
       username: 'demo',
       password: demoPassword,
       firstName: 'Demo',
       lastName: 'User',
-      role: 'USER'
+      role: 'ADMIN'
     }
   });
 
@@ -94,16 +96,20 @@ async function main() {
 
   // Create automatic lists for tags
   for (const tag of tags) {
-    await prisma.list.upsert({
-      where: { tagId: tag.id },
-      update: {},
-      create: {
-        name: `${tag.name}: ${tag.value}`,
-        description: `Automatic list for ${tag.name} (${tag.value}) tag`,
-        isAutomatic: true,
-        tagId: tag.id
-      }
+    const existingList = await prisma.list.findFirst({
+      where: { tagId: tag.id, isAutomatic: true }
     });
+
+    if (!existingList) {
+      await prisma.list.create({
+        data: {
+          name: `${tag.name}: ${tag.value}`,
+          description: `Automatic list for ${tag.name} (${tag.value}) tag`,
+          isAutomatic: true,
+          tagId: tag.id
+        }
+      });
+    }
   }
 
   // Create sample contacts
