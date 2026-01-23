@@ -2,19 +2,18 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import Layout from './components/Layout';
 
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-
-// Placeholder components for now
-const Contacts = () => <div className="p-8 text-center text-gray-600">Contacts page coming soon...</div>;
-const Tags = () => <div className="p-8 text-center text-gray-600">Tags page coming soon...</div>;
-const Lists = () => <div className="p-8 text-center text-gray-600">Lists page coming soon...</div>;
-const Groups = () => <div className="p-8 text-center text-gray-600">Groups page coming soon...</div>;
-const Messages = () => <div className="p-8 text-center text-gray-600">Messages page coming soon...</div>;
+import Contacts from './pages/Contacts';
+import Tags from './pages/Tags';
+import Lists from './pages/Lists';
+import Groups from './pages/Groups';
+import Messages from './pages/Messages';
 
 function App() {
   const { loading } = useAuth();
@@ -48,9 +47,11 @@ function App() {
         path="/contacts"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Contacts />
-            </Layout>
+            <AdminRoute>
+              <Layout>
+                <Contacts />
+              </Layout>
+            </AdminRoute>
           </ProtectedRoute>
         }
       />
@@ -58,9 +59,11 @@ function App() {
         path="/tags"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Tags />
-            </Layout>
+            <AdminRoute>
+              <Layout>
+                <Tags />
+              </Layout>
+            </AdminRoute>
           </ProtectedRoute>
         }
       />
@@ -68,9 +71,11 @@ function App() {
         path="/lists"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Lists />
-            </Layout>
+            <AdminRoute>
+              <Layout>
+                <Lists />
+              </Layout>
+            </AdminRoute>
           </ProtectedRoute>
         }
       />

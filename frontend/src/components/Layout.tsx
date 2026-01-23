@@ -10,14 +10,15 @@ import {
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
+import { isAdmin } from '../utils/roles';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Contacts', href: '/contacts', icon: UserGroupIcon },
-  { name: 'Tags', href: '/tags', icon: TagIcon },
-  { name: 'Lists', href: '/lists', icon: ListBulletIcon },
-  { name: 'Groups', href: '/groups', icon: UserGroupIcon },
-  { name: 'Messages', href: '/messages', icon: ChatBubbleLeftRightIcon },
+  { name: 'Dashboard', href: '/', icon: HomeIcon, adminOnly: false },
+  { name: 'Contacts', href: '/contacts', icon: UserGroupIcon, adminOnly: true },
+  { name: 'Tags', href: '/tags', icon: TagIcon, adminOnly: true },
+  { name: 'Lists', href: '/lists', icon: ListBulletIcon, adminOnly: true },
+  { name: 'Groups', href: '/groups', icon: UserGroupIcon, adminOnly: false },
+  { name: 'Messages', href: '/messages', icon: ChatBubbleLeftRightIcon, adminOnly: false },
 ];
 
 function classNames(...classes: string[]) {
@@ -43,30 +44,32 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         <nav className="mt-6 px-3">
           <div className="space-y-1">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={classNames(
-                    isActive
-                      ? 'bg-primary-50 border-primary-600 text-primary-600'
-                      : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                    'group flex items-center px-3 py-2 text-sm font-medium border-l-4 rounded-r-md'
-                  )}
-                >
-                  <item.icon
+            {navigation
+              .filter((item) => !item.adminOnly || isAdmin(user))
+              .map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
                     className={classNames(
-                      isActive ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-500',
-                      'mr-3 flex-shrink-0 h-6 w-6'
+                      isActive
+                        ? 'bg-primary-50 border-primary-600 text-primary-600'
+                        : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                      'group flex items-center px-3 py-2 text-sm font-medium border-l-4 rounded-r-md'
                     )}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                  >
+                    <item.icon
+                      className={classNames(
+                        isActive ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-500',
+                        'mr-3 flex-shrink-0 h-6 w-6'
+                      )}
+                      aria-hidden="true"
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
           </div>
         </nav>
         
