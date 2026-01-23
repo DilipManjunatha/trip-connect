@@ -79,7 +79,15 @@ git clone <repository-url>
 cd tripconnect
 ```
 
-2. **Backend Setup**
+2. **Install PostgreSQL**
+   - Download and install PostgreSQL from [https://www.postgresql.org/download/](https://www.postgresql.org/download/).
+   - During installation, set a username and password for the database.
+   - After installation, open the PostgreSQL shell or a database client and create the `tripconnect` database:
+     ```sql
+     CREATE DATABASE tripconnect;
+     ```
+
+3. **Backend Setup**
 ```bash
 cd backend
 npm install
@@ -87,40 +95,52 @@ npm install
 # Create environment file
 cp .env.example .env
 # Edit .env with your database credentials and JWT secret
-
-# Set up database
-npm run db:migrate
-npm run db:seed
+```
+Example `.env` file:
+```env
+NODE_ENV=development
+PORT=5000
+DATABASE_URL="postgresql://username:password@localhost:5432/tripconnect"
+JWT_SECRET="your-super-secret-jwt-key"
+JWT_EXPIRES_IN="7d"
+FRONTEND_URL="http://localhost:3000"
 ```
 
-3. **Frontend Setup**
+4. **Set up the database**
+```bash
+npm run db:generate  # Generate Prisma client
+npm run db:migrate   # Apply migrations
+npm run db:seed      # Seed the database with sample data
+```
+
+5. **Frontend Setup**
 ```bash
 cd ../frontend
 npm install
 
 # Create environment file (optional)
-# VITE_API_URL=http://localhost:5000/api
+echo "VITE_API_URL=http://localhost:5000/api" > .env.local
 ```
 
-### Running the Application
+6. **Start the application**
 
-1. **Start the backend server**
+- **Start the backend server**
 ```bash
 cd backend
 npm run dev
 # Server runs on http://localhost:5000
 ```
 
-2. **Start the frontend development server**
+- **Start the frontend development server**
 ```bash
 cd frontend
 npm run dev
 # Frontend runs on http://localhost:3000
 ```
 
-3. **Access the application**
-   - Open http://localhost:3000 in your browser
-   - Use demo credentials: `demo@tripconnect.com` / `demo123`
+7. **Access the application**
+   - Open [http://localhost:3000](http://localhost:3000) in your browser.
+   - Use demo credentials: `demo@tripconnect.com` / `demo123`.
 
 ## 🗄️ Database Schema
 

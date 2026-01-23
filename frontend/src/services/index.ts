@@ -6,6 +6,8 @@ import {
   List,
   TripGroup,
   Message,
+  Itinerary,
+  Expense,
   ApiResponse,
   PaginatedResponse,
   LoginForm,
@@ -202,6 +204,84 @@ export const messagesAPI = {
 
   deleteMessage: async (id: string): Promise<ApiResponse> => {
     const response = await api.delete(`/messages/${id}`);
+    return response.data;
+  },
+};
+
+// Itinerary API
+export const itinerariesAPI = {
+  getItineraries: async (groupId: string): Promise<ApiResponse<{ itineraries: Itinerary[] }>> => {
+    const response = await api.get(`/groups/${groupId}/itineraries`);
+    return response.data;
+  },
+
+  createItinerary: async (groupId: string, data: {
+    title: string;
+    description?: string;
+    location?: string;
+    startTime: string;
+    endTime?: string;
+    cost?: number;
+    notes?: string;
+  }): Promise<ApiResponse<{ itinerary: Itinerary }>> => {
+    const response = await api.post(`/groups/${groupId}/itineraries`, data);
+    return response.data;
+  },
+
+  updateItinerary: async (groupId: string, itineraryId: string, data: {
+    title?: string;
+    description?: string;
+    location?: string;
+    startTime?: string;
+    endTime?: string;
+    cost?: number;
+    notes?: string;
+  }): Promise<ApiResponse<{ itinerary: Itinerary }>> => {
+    const response = await api.put(`/groups/${groupId}/itineraries/${itineraryId}`, data);
+    return response.data;
+  },
+
+  deleteItinerary: async (groupId: string, itineraryId: string): Promise<ApiResponse> => {
+    const response = await api.delete(`/groups/${groupId}/itineraries/${itineraryId}`);
+    return response.data;
+  },
+};
+
+// Expense API
+export const expensesAPI = {
+  getExpenses: async (groupId: string): Promise<ApiResponse<{ expenses: Expense[] }>> => {
+    const response = await api.get(`/groups/${groupId}/expenses`);
+    return response.data;
+  },
+
+  createExpense: async (groupId: string, data: {
+    title: string;
+    description?: string;
+    amount: number;
+    category: string;
+    paidBy?: string;
+    splitType: 'EQUAL' | 'CUSTOM' | 'PERCENTAGE';
+    date: string;
+  }): Promise<ApiResponse<{ expense: Expense }>> => {
+    const response = await api.post(`/groups/${groupId}/expenses`, data);
+    return response.data;
+  },
+
+  updateExpense: async (groupId: string, expenseId: string, data: {
+    title?: string;
+    description?: string;
+    amount?: number;
+    category?: string;
+    paidBy?: string;
+    splitType?: 'EQUAL' | 'CUSTOM' | 'PERCENTAGE';
+    date?: string;
+  }): Promise<ApiResponse<{ expense: Expense }>> => {
+    const response = await api.put(`/groups/${groupId}/expenses/${expenseId}`, data);
+    return response.data;
+  },
+
+  deleteExpense: async (groupId: string, expenseId: string): Promise<ApiResponse> => {
+    const response = await api.delete(`/groups/${groupId}/expenses/${expenseId}`);
     return response.data;
   },
 };
