@@ -30,6 +30,14 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Check if it's a network error (no response from server)
+    const isNetworkError = !error.response && (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error');
+    
+    if (isNetworkError) {
+      // Don't show toast for network errors - let components handle with delightful error UI
+      return Promise.reject({ ...error, isNetworkError: true });
+    }
+    
     const message = error.response?.data?.message || 'An error occurred';
     
     if (error.response?.status === 401) {
@@ -37,6 +45,10 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
       toast.error('Session expired. Please login again.');
+    } else if (error.response?.status === 403) {
+      // Silently handle 403 errors - AdminRoute will handle redirect
+      // Don't show toast for access denied errors
+      return Promise.reject(error);
     } else if (error.response?.status >= 500) {
       toast.error('Server error. Please try again later.');
     } else {
