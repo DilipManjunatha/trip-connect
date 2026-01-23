@@ -8,31 +8,47 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
     const { groupId } = req.query;
     const { page = 1, limit = 20 } = req.query;
     const userId = req.user!.id;
+    // Force reload - messages sorted in ascending order (oldest first)
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = {};
 
     if (groupId) {
-      // Check if user has access to this group
-      const groupMember = await prisma.groupMember.findFirst({
+      // Admins can access all groups, regular users must be members
+      if (req.user!.role !== 'ADMIN') {
+        const groupMember = await prisma.groupMember.findFirst({
+          where: {
+            groupId: groupId as string,
+            OR: [
+              { userId },
+              { contact: { createdById: userId } }
+            ]
+          }
+        });
+
+        if (!groupMember) {
+          return res.status(403).json({
+            success: false,
+            message: 'You do not have access to this group'
+          });
+        }
+      }
+
+      where.groupId = groupId;
+    } else if (req.user!.role !== 'ADMIN') {
+      // For non-admins without groupId, only show messages from groups they're members of
+      const userGroups = await prisma.groupMember.findMany({
         where: {
-          groupId: groupId as string,
           OR: [
             { userId },
             { contact: { createdById: userId } }
           ]
-        }
+        },
+        select: { groupId: true }
       });
-
-      if (!groupMember) {
-        return res.status(403).json({
-          success: false,
-          message: 'You do not have access to this group'
-        });
-      }
-
-      where.groupId = groupId;
+      const groupIds = userGroups.map(gm => gm.groupId);
+      where.groupId = { in: groupIds };
     }
 
     const [messages, total] = await Promise.all([
@@ -57,7 +73,7 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
         skip,
         take: Number(limit),
         orderBy: {
-          createdAt: 'desc'
+          createdAt: 'asc' // Latest message at bottom
         }
       }),
       prisma.message.count({ where })
@@ -118,10 +134,14 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Validate and cast message type
+    const validTypes = ['TEXT', 'IMAGE', 'FILE', 'ANNOUNCEMENT'] as const;
+    const messageType = (validTypes.includes(type as any) ? type : 'TEXT') as 'TEXT' | 'IMAGE' | 'FILE' | 'ANNOUNCEMENT';
+
     const message = await prisma.message.create({
       data: {
         content,
-        type,
+        type: messageType,
         groupId: groupId || null,
         senderId: userId
       },
@@ -143,10 +163,10 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // Emit message via Socket.io
+    // Emit message via Socket.io (camelCase for consistency)
     const io = req.app.get('socketio');
     if (groupId) {
-      io.to(groupId).emit('new-message', message);
+      io.to(groupId).emit('newMessage', message);
     }
 
     res.status(201).json({
@@ -186,10 +206,10 @@ export const deleteMessage = async (req: AuthRequest, res: Response) => {
       where: { id }
     });
 
-    // Emit deletion via Socket.io
+    // Emit deletion via Socket.io (camelCase for consistency)
     const io = req.app.get('socketio');
     if (message.groupId) {
-      io.to(message.groupId).emit('message-deleted', { messageId: id });
+      io.to(message.groupId).emit('messageDeleted', { messageId: id });
     }
 
     res.json({

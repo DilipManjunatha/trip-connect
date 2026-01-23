@@ -7,22 +7,33 @@ export const getGroups = async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
     const userId = req.user!.id;
+    const userRole = req.user!.role;
     
     const skip = (Number(page) - 1) * Number(limit);
     
-    const where: any = {
-      createdById: userId
-    };
+    // Build where clause: Admins see all groups, regular users see only groups they're part of
+    const where: any = userRole === 'ADMIN' 
+      ? {} // Admins see all groups
+      : {
+          OR: [
+            { createdById: userId }, // Groups they created
+            { members: { some: { userId } } } // Groups they're members of
+          ]
+        };
 
     if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { destination: { contains: search as string, mode: 'insensitive' } }
-      ];
+      const searchCondition = {
+        OR: [
+          { name: { contains: search as string, mode: 'insensitive' } },
+          { destination: { contains: search as string, mode: 'insensitive' } }
+        ]
+      };
+      where.AND = where.AND ? [...where.AND, searchCondition] : [searchCondition];
     }
 
     if (status) {
-      where.status = status as string;
+      const statusCondition = { status: status as string };
+      where.AND = where.AND ? [...where.AND, statusCondition] : [statusCondition];
     }
 
     const [groups, total] = await Promise.all([
@@ -94,15 +105,19 @@ export const getGroup = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const userId = req.user!.id;
+    const userRole = req.user!.role;
+
+    // Admins can see any group, regular users only see groups they're part of
+    const where: any = { id };
+    if (userRole !== 'ADMIN') {
+      where.OR = [
+        { createdById: userId },
+        { members: { some: { userId } } }
+      ];
+    }
 
     const group = await prisma.tripGroup.findFirst({
-      where: {
-        id,
-        OR: [
-          { createdById: userId },
-          { members: { some: { userId } } }
-        ]
-      },
+      where,
       include: {
         createdBy: {
           select: {
@@ -261,6 +276,20 @@ export const createGroup = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('newGroup', {
+        id: group.id,
+        name: group.name,
+        destination: group.destination,
+        startDate: group.startDate,
+        endDate: group.endDate,
+        description: group.description,
+        memberCount: group.members?.length || 0
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Group created successfully',
@@ -323,6 +352,13 @@ export const updateGroup = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Validate and cast status if provided
+    let tripStatus: 'PLANNING' | 'CONFIRMED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED' | undefined = undefined;
+    if (status) {
+      const validStatuses = ['PLANNING', 'CONFIRMED', 'ONGOING', 'COMPLETED', 'CANCELLED'] as const;
+      tripStatus = (validStatuses.includes(status as any) ? status : undefined) as 'PLANNING' | 'CONFIRMED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED' | undefined;
+    }
+
     const updatedGroup = await prisma.tripGroup.update({
       where: { id },
       data: {
@@ -332,7 +368,7 @@ export const updateGroup = async (req: AuthRequest, res: Response) => {
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         budget,
-        status
+        status: tripStatus
       },
       include: {
         members: {
@@ -395,6 +431,15 @@ export const deleteGroup = async (req: AuthRequest, res: Response) => {
       where: { id }
     });
 
+    // Emit real-time event to all connected users
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('groupDeleted', {
+        id: group.id,
+        name: group.name
+      });
+    }
+
     res.json({
       success: true,
       message: 'Group deleted successfully'
@@ -439,27 +484,86 @@ export const addMembersToGroup = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Validate contact IDs exist and belong to user
+    if (contactIds.length > 0) {
+      const contacts = await prisma.contact.findMany({
+        where: {
+          id: { in: contactIds },
+          createdById: userId
+        }
+      });
+
+      if (contacts.length !== contactIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Some contact IDs are invalid or do not belong to you'
+        });
+      }
+    }
+
+    // Validate user IDs exist
+    if (userIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: {
+          id: { in: userIds }
+        }
+      });
+
+      if (users.length !== userIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Some user IDs are invalid'
+        });
+      }
+    }
+
+    // Check for existing memberships to avoid duplicates
+    const existingMembers = await prisma.groupMember.findMany({
+      where: {
+        groupId: id,
+        OR: [
+          { contactId: { in: contactIds } },
+          { userId: { in: userIds } }
+        ]
+      }
+    });
+
+    const existingContactIds = existingMembers
+      .filter(m => m.contactId)
+      .map(m => m.contactId!);
+    const existingUserIds = existingMembers
+      .filter(m => m.userId)
+      .map(m => m.userId!);
+
+    const newContactIds = contactIds.filter((cid: string) => !existingContactIds.includes(cid));
+    const newUserIds = userIds.filter((uid: string) => !existingUserIds.includes(uid));
+
     const newMembers = [
-      ...contactIds.map((contactId: string) => ({
+      ...newContactIds.map((contactId: string) => ({
         groupId: id,
         contactId,
         role: 'MEMBER' as const
       })),
-      ...userIds.map((uid: string) => ({
+      ...newUserIds.map((uid: string) => ({
         groupId: id,
         userId: uid,
         role: 'MEMBER' as const
       }))
     ];
 
-    await prisma.groupMember.createMany({
-      data: newMembers,
-      skipDuplicates: true
-    });
+    if (newMembers.length > 0) {
+      await prisma.groupMember.createMany({
+        data: newMembers,
+        skipDuplicates: true
+      });
+    }
+
+    const addedCount = newMembers.length;
+    const skippedCount = (contactIds.length + userIds.length) - addedCount;
 
     res.json({
       success: true,
-      message: 'Members added successfully'
+      message: `Members added successfully. ${addedCount} added, ${skippedCount} already members.`
     });
   } catch (error) {
     console.error('Add members error:', error);

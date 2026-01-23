@@ -10,18 +10,22 @@ import {
   groupValidation
 } from '../controllers/groupController';
 import { authenticate } from '../middleware/auth';
+import { requireAdmin } from '../middleware/authorize';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
 
+// All users can view groups they're members of (handled in controller)
 router.get('/', getGroups);
 router.get('/:id', getGroup);
-router.post('/', groupValidation, createGroup);
-router.put('/:id', groupValidation, updateGroup);
-router.delete('/:id', deleteGroup);
-router.post('/:id/members', addMembersToGroup);
-router.delete('/:id/members/:memberId', removeMemberFromGroup);
+
+// Group management (create/update/delete) is admin-only
+router.post('/', requireAdmin, groupValidation, createGroup);
+router.put('/:id', requireAdmin, groupValidation, updateGroup);
+router.delete('/:id', requireAdmin, deleteGroup);
+router.post('/:id/members', requireAdmin, addMembersToGroup);
+router.delete('/:id/members/:memberId', requireAdmin, removeMemberFromGroup);
 
 export default router;
