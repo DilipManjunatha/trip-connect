@@ -1,11 +1,11 @@
 buildscript {
     ext {
-        buildToolsVersion = "33.0.0"
+        buildToolsVersion = "34.0.0"
         minSdkVersion = 21
-        compileSdkVersion = 33
-        targetSdkVersion = 33
+        compileSdkVersion = 34
+        targetSdkVersion = 34
         ndkVersion = "25.1.8937393"
-        kotlinVersion = "1.8.10"
+        kotlinVersion = "1.8.22"
         reactNativeVersion = "0.73.11"
     }
     repositories {
@@ -14,7 +14,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.4.2")
+        classpath("com.android.tools.build:gradle:8.1.4")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
@@ -44,10 +44,95 @@ subprojects {
         // Fix for packages that reference com.facebook.react:react-native:+ which doesn't exist
         // In RN 0.73, we use com.facebook.react:react-android instead
         if (project.hasProperty("android")) {
+            project.android {
+                // Set namespace if not already specified (required for AGP 8.0+)
+                // This fixes: "Namespace not specified" error for libraries like react-native-date-picker
+                try {
+                    def existingNs = null
+                    try {
+                        existingNs = namespace
+                    } catch (Exception e) {
+                        // Namespace not set
+                    }
+                    
+                    if (existingNs == null || existingNs.isEmpty()) {
+                        // Try to extract namespace from AndroidManifest.xml
+                        def manifestFile = project.file("src/main/AndroidManifest.xml")
+                        if (!manifestFile.exists()) {
+                            manifestFile = project.file("AndroidManifest.xml")
+                        }
+                        
+                        def namespaceValue = null
+                        if (manifestFile.exists()) {
+                            def manifestContent = manifestFile.text
+                            def packageMatch = manifestContent =~ /package=["']([^"']+)["']/
+                            if (packageMatch.find()) {
+                                namespaceValue = packageMatch.group(1)
+                            }
+                        }
+                        
+                        // Fallback: generate namespace from project name or use common React Native library pattern
+                        if (namespaceValue == null) {
+                            def projectName = project.name
+                            // Handle react-native-date-picker specifically
+                            if (projectName == "react-native-date-picker") {
+                                namespaceValue = "com.henninghall.datepicker"
+                            } else {
+                                // Convert project name to valid namespace
+                                projectName = projectName.replaceAll(/[^a-zA-Z0-9]/, '')
+                                namespaceValue = "com.${projectName.toLowerCase()}"
+                            }
+                        }
+                        
+                        // Set namespace
+                        namespace = namespaceValue
+                    }
+                } catch (Exception e) {
+                    // Some projects might have different structure, ignore
+                }
+                
+                // Enable buildConfig for all subprojects (required for libraries like react-native-date-picker)
+                // This fixes: "defaultConfig contains custom BuildConfig fields, but the feature is disabled"
+                buildFeatures {
+                    buildConfig true
+                }
+                
+                // Set consistent Java compatibility for all subprojects
+                // This fixes: "compileDebugJavaWithJavac and compileDebugKotlin jvm target compatibility" errors
+                // Using Java 11 as it's required by modern React Native libraries
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_11
+                    targetCompatibility JavaVersion.VERSION_11
+                }
+            }
+            
+            // Set Kotlin JVM target to match Java (11)
+            // This ensures Kotlin and Java compile to the same bytecode version
+            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                kotlinOptions {
+                    jvmTarget = "11"
+                    // Add compiler arguments for better compatibility
+                    freeCompilerArgs += [
+                        "-Xjvm-default=all",
+                        "-Xopt-in=kotlin.RequiresOptIn"
+                    ]
+                    // Suppress warnings that might cause build failures
+                    allWarningsAsErrors = false
+                }
+            }
+            
             project.configurations.all {
                 resolutionStrategy {
                     // Force react-android version
                     force "com.facebook.react:react-android:${rootProject.ext.reactNativeVersion}"
+                    
+                    // Force compatible AndroidX versions to avoid SDK 35 requirements
+                    force "androidx.core:core:1.12.0"
+                    force "androidx.core:core-ktx:1.12.0"
+                    force "androidx.appcompat:appcompat:1.6.1"
+                    force "androidx.appcompat:appcompat-resources:1.6.1"
+                    force "androidx.annotation:annotation-experimental:1.3.1"
+                    force "androidx.core:core-viewtree:1.0.0"
                     
                     // Substitute react-native dependency with react-android
                     eachDependency { details ->

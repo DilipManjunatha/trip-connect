@@ -6,6 +6,11 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     namespace "com.tripconnect"
 
+    // Enable buildConfig feature (required in AGP 8.0+)
+    buildFeatures {
+        buildConfig true
+    }
+
     // Read the newArchEnabled and hermesEnabled flags from gradle.properties
     def enableNewArchitecture = project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
     def enableHermes = project.hasProperty("hermesEnabled") && project.hermesEnabled == "true"
@@ -37,13 +42,29 @@ android {
         pickFirst 'lib/x86/libc++_shared.so'
         pickFirst 'lib/x86_64/libc++_shared.so'
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+// Configure Kotlin options outside the android block
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
 }
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-android:0.73.11"
     implementation "com.facebook.react:hermes-android:0.73.11"
+    
+    // AndroidX dependencies - versions are forced via resolutionStrategy in root build.gradle
     implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.core:core:1.12.0"
+    implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "com.google.android.material:material:1.9.0"
 }
