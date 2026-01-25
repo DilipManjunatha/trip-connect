@@ -14,6 +14,9 @@ import Tags from './pages/Tags';
 import Lists from './pages/Lists';
 import Groups from './pages/Groups';
 import Messages from './pages/Messages';
+import Expenses from './pages/Expenses';
+import Itinerary from './pages/Itinerary';
+import Users from './pages/Users';
 
 function App() {
   const { loading } = useAuth();
@@ -96,6 +99,38 @@ function App() {
             <Layout>
               <Messages />
             </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/expenses"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Expenses />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/itinerary"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Itinerary />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <Layout>
+                <Users />
+              </Layout>
+            </AdminRoute>
           </ProtectedRoute>
         }
       />

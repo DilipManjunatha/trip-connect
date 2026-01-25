@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { TripGroup, GroupMember, Contact } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserGroupIcon, MapPinIcon, CalendarIcon, CurrencyDollarIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserGroupIcon, MapPinIcon, CalendarIcon, CurrencyDollarIcon, UserPlusIcon, ClockIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
+import { useNavigate } from 'react-router-dom';
 
 const statusColors: Record<string, string> = {
   PLANNING: 'bg-blue-100 text-blue-800',
@@ -17,6 +18,7 @@ const statusColors: Record<string, string> = {
 
 const Groups: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<TripGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
@@ -300,6 +302,30 @@ const Groups: React.FC = () => {
                     {group._count?.members || 0} members
                   </div>
                   <span>{group._count?.expenses || 0} expenses</span>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/expenses?groupId=${group.id}`);
+                    }}
+                    className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition"
+                  >
+                    <CurrencyDollarIcon className="h-4 w-4" />
+                    Expenses
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/itinerary?groupId=${group.id}`);
+                    }}
+                    className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition"
+                  >
+                    <ClockIcon className="h-4 w-4" />
+                    Itinerary
+                  </button>
                 </div>
 
                 {isAdmin(user) && (

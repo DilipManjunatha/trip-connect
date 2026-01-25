@@ -1,287 +1,310 @@
 import api from './api';
-import {
-  User,
-  Contact,
-  Tag,
-  List,
-  TripGroup,
-  Message,
-  Itinerary,
-  Expense,
-  ApiResponse,
-  PaginatedResponse,
-  LoginForm,
-  RegisterForm,
-  ContactForm,
-  TagForm,
-  GroupForm
-} from '../types';
+import { User } from '../types';
 
-// Auth API
-export const authAPI = {
-  login: async (data: LoginForm): Promise<ApiResponse<{ user: User; token: string }>> => {
-    const response = await api.post('/auth/login', data);
+// Auth services
+export const authService = {
+  login: async (email: string, password: string) => {
+    const response = await api.post('/auth/login', { email, password });
     return response.data;
   },
 
-  register: async (data: RegisterForm): Promise<ApiResponse<{ user: User; token: string }>> => {
+  register: async (data: {
+    email: string;
+    username: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     const response = await api.post('/auth/register', data);
     return response.data;
   },
 
-  getProfile: async (): Promise<ApiResponse<{ user: User }>> => {
+  me: async () => {
+    const response = await api.get('/auth/profile');
+    return response.data;
+  },
+
+  getProfile: async () => {
     const response = await api.get('/auth/profile');
     return response.data;
   },
 };
 
-// Contacts API
-export const contactsAPI = {
-  getContacts: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    tagId?: string;
-  }): Promise<PaginatedResponse<Contact>> => {
-    const response = await api.get('/contacts', { params });
+// Alias for backward compatibility
+export const authAPI = authService;
+
+// Contact services
+export const contactService = {
+  getAll: async () => {
+    const response = await api.get('/contacts');
     return response.data;
   },
 
-  getContact: async (id: string): Promise<ApiResponse<{ contact: Contact }>> => {
+  getContacts: async () => {
+    const response = await api.get('/contacts');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
     const response = await api.get(`/contacts/${id}`);
     return response.data;
   },
 
-  createContact: async (data: ContactForm): Promise<ApiResponse<{ contact: Contact }>> => {
+  create: async (data: any) => {
     const response = await api.post('/contacts', data);
     return response.data;
   },
 
-  updateContact: async (id: string, data: ContactForm): Promise<ApiResponse<{ contact: Contact }>> => {
+  update: async (id: string, data: any) => {
     const response = await api.put(`/contacts/${id}`, data);
     return response.data;
   },
 
-  deleteContact: async (id: string): Promise<ApiResponse> => {
+  delete: async (id: string) => {
     const response = await api.delete(`/contacts/${id}`);
     return response.data;
   },
 };
 
-// Tags API
-export const tagsAPI = {
-  getTags: async (search?: string): Promise<ApiResponse<{ tags: Tag[] }>> => {
-    const response = await api.get('/tags', { params: { search } });
+// Tag services
+export const tagService = {
+  getAll: async () => {
+    const response = await api.get('/tags');
     return response.data;
   },
 
-  getTag: async (id: string): Promise<ApiResponse<{ tag: Tag }>> => {
+  getTags: async () => {
+    const response = await api.get('/tags');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
     const response = await api.get(`/tags/${id}`);
     return response.data;
   },
 
-  createTag: async (data: TagForm): Promise<ApiResponse<{ tag: Tag }>> => {
+  create: async (data: any) => {
     const response = await api.post('/tags', data);
     return response.data;
   },
 
-  updateTag: async (id: string, data: TagForm): Promise<ApiResponse<{ tag: Tag }>> => {
+  update: async (id: string, data: any) => {
     const response = await api.put(`/tags/${id}`, data);
     return response.data;
   },
 
-  deleteTag: async (id: string): Promise<ApiResponse> => {
+  delete: async (id: string) => {
     const response = await api.delete(`/tags/${id}`);
     return response.data;
   },
 };
 
-// Lists API
-export const listsAPI = {
-  getLists: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    isAutomatic?: boolean;
-  }): Promise<PaginatedResponse<List>> => {
-    const response = await api.get('/lists', { params });
+// List services
+export const listService = {
+  getAll: async () => {
+    const response = await api.get('/lists');
     return response.data;
   },
 
-  getList: async (id: string): Promise<ApiResponse<{ list: List }>> => {
+  getLists: async () => {
+    const response = await api.get('/lists');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
     const response = await api.get(`/lists/${id}`);
     return response.data;
   },
 
-  createList: async (data: { name: string; description?: string; contactIds?: string[] }): Promise<ApiResponse<{ list: List }>> => {
+  create: async (data: any) => {
     const response = await api.post('/lists', data);
     return response.data;
   },
 
-  updateList: async (id: string, data: { name: string; description?: string; contactIds?: string[] }): Promise<ApiResponse<{ list: List }>> => {
+  update: async (id: string, data: any) => {
     const response = await api.put(`/lists/${id}`, data);
     return response.data;
   },
 
-  deleteList: async (id: string): Promise<ApiResponse> => {
+  delete: async (id: string) => {
     const response = await api.delete(`/lists/${id}`);
     return response.data;
   },
 
-  addContactToList: async (listId: string, contactId: string): Promise<ApiResponse> => {
-    const response = await api.post(`/lists/${listId}/contacts`, { contactId });
+  addContact: async (id: string, contactId: string) => {
+    const response = await api.post(`/lists/${id}/contacts`, { contactId });
     return response.data;
   },
 
-  removeContactFromList: async (listId: string, contactId: string): Promise<ApiResponse> => {
-    const response = await api.delete(`/lists/${listId}/contacts/${contactId}`);
+  removeContact: async (id: string, contactId: string) => {
+    const response = await api.delete(`/lists/${id}/contacts/${contactId}`);
+    return response.data;
+  },
+
+  cleanup: async () => {
+    const response = await api.post('/lists/cleanup');
     return response.data;
   },
 };
 
-// Groups API
-export const groupsAPI = {
-  getGroups: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<TripGroup>> => {
-    const response = await api.get('/groups', { params });
+// Group services
+export const groupService = {
+  getAll: async () => {
+    const response = await api.get('/groups');
     return response.data;
   },
 
-  getGroup: async (id: string): Promise<ApiResponse<{ group: TripGroup }>> => {
+  getGroups: async () => {
+    const response = await api.get('/groups');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
     const response = await api.get(`/groups/${id}`);
     return response.data;
   },
 
-  createGroup: async (data: GroupForm): Promise<ApiResponse<{ group: TripGroup }>> => {
+  create: async (data: any) => {
     const response = await api.post('/groups', data);
     return response.data;
   },
 
-  updateGroup: async (id: string, data: Partial<GroupForm>): Promise<ApiResponse<{ group: TripGroup }>> => {
+  update: async (id: string, data: any) => {
     const response = await api.put(`/groups/${id}`, data);
     return response.data;
   },
 
-  deleteGroup: async (id: string): Promise<ApiResponse> => {
+  delete: async (id: string) => {
     const response = await api.delete(`/groups/${id}`);
     return response.data;
   },
 
-  addMembers: async (groupId: string, data: { contactIds?: string[]; userIds?: string[] }): Promise<ApiResponse> => {
-    const response = await api.post(`/groups/${groupId}/members`, data);
+  addMembers: async (id: string, data: { contactIds?: string[]; userIds?: string[] }) => {
+    const response = await api.post(`/groups/${id}/members`, data);
     return response.data;
   },
 
-  removeMember: async (groupId: string, memberId: string): Promise<ApiResponse> => {
-    const response = await api.delete(`/groups/${groupId}/members/${memberId}`);
+  removeMember: async (id: string, memberId: string) => {
+    const response = await api.delete(`/groups/${id}/members/${memberId}`);
     return response.data;
   },
 };
 
-// Messages API
-export const messagesAPI = {
-  getMessages: async (params?: {
-    groupId?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<PaginatedResponse<Message>> => {
-    const response = await api.get('/messages', { params });
+// Itinerary services
+export const itineraryService = {
+  getAll: async (groupId: string) => {
+    const response = await api.get(`/groups/${groupId}/itineraries`);
     return response.data;
   },
 
-  sendMessage: async (data: {
-    content: string;
-    type?: string;
-    groupId?: string;
-  }): Promise<ApiResponse<{ message: Message }>> => {
+  getById: async (groupId: string, id: string) => {
+    const response = await api.get(`/groups/${groupId}/itineraries/${id}`);
+    return response.data;
+  },
+
+  create: async (groupId: string, data: any) => {
+    const response = await api.post(`/groups/${groupId}/itineraries`, data);
+    return response.data;
+  },
+
+  update: async (groupId: string, id: string, data: any) => {
+    const response = await api.put(`/groups/${groupId}/itineraries/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (groupId: string, id: string) => {
+    const response = await api.delete(`/groups/${groupId}/itineraries/${id}`);
+    return response.data;
+  },
+};
+
+// Expense services
+export const expenseService = {
+  getAll: async (groupId: string) => {
+    const response = await api.get(`/groups/${groupId}/expenses`);
+    return response.data;
+  },
+
+  getById: async (groupId: string, id: string) => {
+    const response = await api.get(`/groups/${groupId}/expenses/${id}`);
+    return response.data;
+  },
+
+  create: async (groupId: string, data: any) => {
+    const response = await api.post(`/groups/${groupId}/expenses`, data);
+    return response.data;
+  },
+
+  update: async (groupId: string, id: string, data: any) => {
+    const response = await api.put(`/groups/${groupId}/expenses/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (groupId: string, id: string) => {
+    const response = await api.delete(`/groups/${groupId}/expenses/${id}`);
+    return response.data;
+  },
+};
+
+// Message services
+export const messageService = {
+  getAll: async (groupId?: string) => {
+    const url = groupId ? `/messages?groupId=${groupId}` : '/messages';
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  create: async (data: any) => {
     const response = await api.post('/messages', data);
     return response.data;
   },
 
-  deleteMessage: async (id: string): Promise<ApiResponse> => {
+  delete: async (id: string) => {
     const response = await api.delete(`/messages/${id}`);
     return response.data;
   },
 };
 
-// Itinerary API
-export const itinerariesAPI = {
-  getItineraries: async (groupId: string): Promise<ApiResponse<{ itineraries: Itinerary[] }>> => {
-    const response = await api.get(`/groups/${groupId}/itineraries`);
+// User management services
+export const userService = {
+  getAll: async () => {
+    const response = await api.get('/users');
     return response.data;
   },
 
-  createItinerary: async (groupId: string, data: {
-    title: string;
-    description?: string;
-    location?: string;
-    startTime: string;
-    endTime?: string;
-    cost?: number;
-    notes?: string;
-  }): Promise<ApiResponse<{ itinerary: Itinerary }>> => {
-    const response = await api.post(`/groups/${groupId}/itineraries`, data);
+  getById: async (id: string) => {
+    const response = await api.get(`/users/${id}`);
     return response.data;
   },
 
-  updateItinerary: async (groupId: string, itineraryId: string, data: {
-    title?: string;
-    description?: string;
-    location?: string;
-    startTime?: string;
-    endTime?: string;
-    cost?: number;
-    notes?: string;
-  }): Promise<ApiResponse<{ itinerary: Itinerary }>> => {
-    const response = await api.put(`/groups/${groupId}/itineraries/${itineraryId}`, data);
+  updateRole: async (id: string, role: 'USER' | 'ADMIN') => {
+    const response = await api.put(`/users/${id}/role`, { role });
     return response.data;
   },
 
-  deleteItinerary: async (groupId: string, itineraryId: string): Promise<ApiResponse> => {
-    const response = await api.delete(`/groups/${groupId}/itineraries/${itineraryId}`);
+  update: async (id: string, data: Partial<User>) => {
+    const response = await api.put(`/users/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/users/stats');
     return response.data;
   },
 };
 
-// Expense API
-export const expensesAPI = {
-  getExpenses: async (groupId: string): Promise<ApiResponse<{ expenses: Expense[] }>> => {
-    const response = await api.get(`/groups/${groupId}/expenses`);
-    return response.data;
-  },
+// Backward compatibility aliases
+export const contactsAPI = contactService;
+export const tagsAPI = tagService;
+export const listsAPI = listService;
+export const groupsAPI = groupService;
+export const itinerariesAPI = itineraryService;
+export const expensesAPI = expenseService;
+export const messagesAPI = messageService;
+export const usersAPI = userService;
 
-  createExpense: async (groupId: string, data: {
-    title: string;
-    description?: string;
-    amount: number;
-    category: string;
-    paidBy?: string;
-    splitType: 'EQUAL' | 'CUSTOM' | 'PERCENTAGE';
-    date: string;
-  }): Promise<ApiResponse<{ expense: Expense }>> => {
-    const response = await api.post(`/groups/${groupId}/expenses`, data);
-    return response.data;
-  },
-
-  updateExpense: async (groupId: string, expenseId: string, data: {
-    title?: string;
-    description?: string;
-    amount?: number;
-    category?: string;
-    paidBy?: string;
-    splitType?: 'EQUAL' | 'CUSTOM' | 'PERCENTAGE';
-    date?: string;
-  }): Promise<ApiResponse<{ expense: Expense }>> => {
-    const response = await api.put(`/groups/${groupId}/expenses/${expenseId}`, data);
-    return response.data;
-  },
-
-  deleteExpense: async (groupId: string, expenseId: string): Promise<ApiResponse> => {
-    const response = await api.delete(`/groups/${groupId}/expenses/${expenseId}`);
-    return response.data;
-  },
-};

@@ -8,6 +8,12 @@ export interface User {
   role: 'USER' | 'ADMIN';
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    contacts: number;
+    tripGroups: number;
+    messages: number;
+    groupMembers: number;
+  };
 }
 
 export interface Contact {
