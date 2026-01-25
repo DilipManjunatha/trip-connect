@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Tag } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, TagIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
+import EmptyState from '../components/EmptyState';
+import InfoTooltip from '../components/InfoTooltip';
 
 const Tags: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -18,6 +20,7 @@ const Tags: React.FC = () => {
     description: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [showValueField, setShowValueField] = useState(false);
 
   const colors = [
     '#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981',
@@ -63,6 +66,7 @@ const Tags: React.FC = () => {
         color: tag.color,
         description: tag.description || '',
       });
+      setShowValueField(!!tag.value); // Show value field if editing and has value
     } else {
       setEditingTag(null);
       setFormData({
@@ -71,6 +75,7 @@ const Tags: React.FC = () => {
         color: '#3B82F6',
         description: '',
       });
+      setShowValueField(false);
     }
     setShowModal(true);
   };
@@ -78,6 +83,7 @@ const Tags: React.FC = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingTag(null);
+    setShowValueField(false);
     setFormData({
       name: '',
       value: '',
@@ -154,6 +160,7 @@ const Tags: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">Tags</h1>
         <button
           onClick={() => handleOpenModal()}
+          data-tour="create-tag"
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
@@ -223,15 +230,20 @@ const Tags: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-500 text-lg">No tags found</p>
-            <button
-              onClick={() => handleOpenModal()}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Create your first tag
-            </button>
-          </div>
+          <EmptyState
+            icon={<TagIcon className="h-16 w-16" />}
+            title="No tags yet"
+            description="Tags help you organize contacts into categories. When you create a tag and assign it to contacts, a Smart List is automatically created!"
+            actionButton={{
+              label: "Create Your First Tag",
+              onClick: () => handleOpenModal()
+            }}
+            examples={[
+              "Language: Spanish - for Spanish speakers",
+              "Skill: Photography - for photographers",
+              "Status: VIP - for important contacts"
+            ]}
+          />
         )}
       </div>
 
@@ -251,10 +263,33 @@ const Tags: React.FC = () => {
                   <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
+              
+              {/* Examples Section */}
+              {!editingTag && (
+                <div className="mb-4 bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">💡 Common tag patterns:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="font-semibold text-gray-900">Language:</span> Spanish, English, French
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-900">Skill:</span> Photography, Cooking
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-900">Status:</span> VIP, Active, Pending
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-900">Relationship:</span> Family, Friend
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Tag Name *
+                    <InfoTooltip content="Categories to organize contacts (e.g., Language, Skill, Status, Relationship)" />
                   </label>
                   <input
                     type="text"
@@ -262,24 +297,42 @@ const Tags: React.FC = () => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Friend, Family, Colleague"
+                    placeholder="e.g., Language, Skill, Status"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Value
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.value}
-                    onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Optional value"
-                  />
-                </div>
+                
+                {/* Progressive disclosure for value field */}
+                {showValueField ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Value (Optional)
+                      <InfoTooltip content="Optional specific value (e.g., Spanish for Language tag, Photography for Skill tag)" />
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.value}
+                      onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Spanish, Photography, VIP"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowValueField(true)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add value (optional)
+                  </button>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Color
+                    <InfoTooltip content="Choose a color to visually identify this tag and its associated list" />
                   </label>
                   <div className="grid grid-cols-6 gap-2">
                     {colors.map((color) => (
@@ -307,6 +360,24 @@ const Tags: React.FC = () => {
                     placeholder="Optional description"
                   />
                 </div>
+                
+                {/* Info Box about automatic list creation */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800">What happens after creation?</h3>
+                      <p className="mt-1 text-sm text-blue-700">
+                        When you assign this tag to contacts, a Smart List will be automatically created. The list will update automatically as you add or remove this tag from contacts.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"

@@ -6,11 +6,15 @@ import {
   TagIcon,
   ListBulletIcon,
   ChatBubbleLeftRightIcon,
+  UsersIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
+import ProductTour from './ProductTour';
+import { useProductTour } from '../hooks/useProductTour';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, adminOnly: false },
@@ -19,6 +23,7 @@ const navigation = [
   { name: 'Lists', href: '/lists', icon: ListBulletIcon, adminOnly: true },
   { name: 'Groups', href: '/groups', icon: UserGroupIcon, adminOnly: false },
   { name: 'Messages', href: '/messages', icon: ChatBubbleLeftRightIcon, adminOnly: false },
+  { name: 'Users', href: '/users', icon: UsersIcon, adminOnly: true },
 ];
 
 function classNames(...classes: string[]) {
@@ -29,6 +34,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { run, stepIndex, setStepIndex, completeTour, stopTour, resetTour } = useProductTour();
+
+  // #region agent log
+  React.useEffect(() => {
+    console.log('[DEBUG Layout.tsx:35] Layout mounted', {hasUser:!!user,user:user,role:user?.role,pathname:location.pathname});
+    fetch('http://127.0.0.1:7242/ingest/fe4a1550-1fce-479e-9704-18d14bef03f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.tsx:35',message:'Layout mounted',data:{hasUser:!!user,user:user,role:user?.role,pathname:location.pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'A,C,D'})}).catch(()=>{});
+  }, [user, location.pathname]);
+  // #endregion
 
   const handleLogout = () => {
     logout();
@@ -45,13 +58,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <nav className="mt-6 px-3">
           <div className="space-y-1">
             {navigation
-              .filter((item) => !item.adminOnly || isAdmin(user))
+              .filter((item) => {
+                const shouldShow = !item.adminOnly || isAdmin(user);
+                // #region agent log
+                console.log('[DEBUG Layout.tsx:52] nav filter', {itemName:item.name,adminOnly:item.adminOnly,isAdminResult:isAdmin(user),shouldShow,userRole:user?.role});
+                fetch('http://127.0.0.1:7242/ingest/fe4a1550-1fce-479e-9704-18d14bef03f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Layout.tsx:52',message:'nav filter',data:{itemName:item.name,adminOnly:item.adminOnly,isAdminResult:isAdmin(user),shouldShow,userRole:user?.role},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'A,C'})}).catch(()=>{});
+                // #endregion
+                return shouldShow;
+              })
               .map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
+                    data-tour={`${item.name.toLowerCase()}-nav`}
                     className={classNames(
                       isActive
                         ? 'bg-primary-50 border-primary-600 text-primary-600'
@@ -92,8 +113,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <button
               onClick={handleLogout}
               className="ml-3 flex-shrink-0 p-1 text-gray-400 hover:text-gray-500"
+              title="Logout"
             >
               <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            </button>
+            <button
+              onClick={resetTour}
+              className="ml-2 flex-shrink-0 p-1 text-gray-400 hover:text-gray-500"
+              title="Restart Tour"
+            >
+              <QuestionMarkCircleIcon className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -109,6 +138,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </main>
       </div>
+      
+      {/* Product Tour */}
+      <ProductTour
+        run={run}
+        stepIndex={stepIndex}
+        setStepIndex={setStepIndex}
+        onComplete={completeTour}
+        onStop={stopTour}
+      />
     </div>
   );
 };

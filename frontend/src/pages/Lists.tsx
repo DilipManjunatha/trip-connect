@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { List, Contact, Tag } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, CheckIcon, QueueListIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
+import EmptyState from '../components/EmptyState';
+import InfoTooltip from '../components/InfoTooltip';
 
 const Lists: React.FC = () => {
   const [lists, setLists] = useState<List[]>([]);
@@ -21,6 +23,11 @@ const Lists: React.FC = () => {
     tagId: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [showExplainer, setShowExplainer] = useState(() => {
+    const dismissed = localStorage.getItem('smartListExplainerDismissed');
+    return !dismissed;
+  });
+  const [showDescription, setShowDescription] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -70,6 +77,7 @@ const Lists: React.FC = () => {
         isAutomatic: list.isAutomatic,
         tagId: list.tagId || '',
       });
+      setShowDescription(!!list.description);
     } else {
       setEditingList(null);
       setFormData({
@@ -78,6 +86,7 @@ const Lists: React.FC = () => {
         isAutomatic: false,
         tagId: '',
       });
+      setShowDescription(false);
     }
     setShowModal(true);
   };
@@ -145,6 +154,11 @@ const Lists: React.FC = () => {
 
   const selectedList = lists.find(l => l.id === selectedListId);
   const listContacts = selectedList?.members?.map(m => m.contact).filter(Boolean) as Contact[] || [];
+  
+  const handleDismissExplainer = () => {
+    setShowExplainer(false);
+    localStorage.setItem('smartListExplainerDismissed', 'true');
+  };
 
   return (
     <div className="space-y-6">
@@ -170,6 +184,39 @@ const Lists: React.FC = () => {
           className="w-full px-4 py-3 border-0 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
       </div>
+
+      {/* Smart List Explainer Banner */}
+      {showExplainer && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center mb-2">
+                <svg className="h-5 w-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <h3 className="text-sm font-semibold text-blue-900">About Smart Lists</h3>
+              </div>
+              <p className="text-sm text-blue-800 mb-2">
+                Smart Lists automatically update when you add or remove tags from contacts. 
+                Create a tag → Assign it to contacts → The list updates automatically!
+              </p>
+              <div className="flex items-center text-xs text-blue-700 bg-white/50 rounded px-2 py-1 inline-block">
+                <span className="font-semibold mr-1">Contact</span>
+                <span className="mr-1">+</span>
+                <span className="font-semibold mr-1">Tag</span>
+                <span className="mr-1">→</span>
+                <span className="font-semibold">Auto-added to List</span>
+              </div>
+            </div>
+            <button
+              onClick={handleDismissExplainer}
+              className="ml-4 text-blue-400 hover:text-blue-600 transition"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lists Sidebar */}
@@ -208,15 +255,20 @@ const Lists: React.FC = () => {
               </div>
             ))
           ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 text-sm">No lists found</p>
-              <button
-                onClick={() => handleOpenModal()}
-                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                Create one now
-              </button>
-            </div>
+            <EmptyState
+              icon={<QueueListIcon className="h-16 w-16" />}
+              title="No lists yet"
+              description="Lists are automatically created when you create tags and assign them to contacts. Start by creating some tags!"
+              actionButton={{
+                label: "Go to Tags",
+                onClick: () => window.location.href = '/tags'
+              }}
+              examples={[
+                "Create a 'Language: Spanish' tag",
+                "Assign it to contacts who speak Spanish",
+                "A Smart List is automatically created!"
+              ]}
+            />
           )}
         </div>
 
@@ -232,16 +284,46 @@ const Lists: React.FC = () => {
                 <div className="mt-4 flex flex-wrap gap-2">
                   {selectedList.isAutomatic && (
                     <span className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                      Automatic List
+                      🔄 Automatic List
                     </span>
                   )}
                   {selectedList.tag && (
-                    <span className="text-xs px-3 py-1 rounded-full" style={{ backgroundColor: selectedList.tag.color + '20', color: selectedList.tag.color }}>
-                      {selectedList.tag.name}
+                    <span className="text-xs px-3 py-1 rounded-full flex items-center" style={{ backgroundColor: selectedList.tag.color + '20', color: selectedList.tag.color }}>
+                      <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                      {selectedList.tag.name}{selectedList.tag.value ? `: ${selectedList.tag.value}` : ''}
                     </span>
                   )}
                 </div>
               </div>
+
+              {/* About this list section */}
+              {selectedList.isAutomatic && selectedList.tag && (
+                <div className="border-t pt-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-2">About this Smart List</h4>
+                    <div className="space-y-2 text-sm text-blue-800">
+                      <p>• This list is synced with the <span className="font-semibold">{selectedList.tag.name}{selectedList.tag.value ? `: ${selectedList.tag.value}` : ''}</span> tag</p>
+                      <p>• Members are automatically added when you assign this tag to contacts</p>
+                      <p>• Remove the tag from a contact to remove them from this list</p>
+                      <div className="mt-3 pt-3 border-t border-blue-200">
+                        <div className="flex items-center text-xs">
+                          <span className="font-medium">Contact</span>
+                          <svg className="h-4 w-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="font-medium">Tag</span>
+                          <svg className="h-4 w-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                          </svg>
+                          <span className="font-medium">Auto-added to List</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="border-t pt-6">
                 <div className="flex justify-between items-center mb-4">
@@ -316,18 +398,34 @@ const Lists: React.FC = () => {
                     placeholder="e.g., VIP Contacts, Family"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Optional description"
-                  />
-                </div>
+                
+                {/* Progressive disclosure for description */}
+                {showDescription ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Optional description"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowDescription(true)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add description (optional)
+                  </button>
+                )}
+                
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -337,6 +435,7 @@ const Lists: React.FC = () => {
                       className="rounded border-gray-300 text-blue-600"
                     />
                     <span className="ml-2 text-sm text-gray-700">Automatic List</span>
+                    <InfoTooltip content="Creates a list that automatically includes all contacts with the selected tag" />
                   </label>
                   <p className="text-xs text-gray-500 ml-6">Automatically add contacts with selected tag</p>
                 </div>
