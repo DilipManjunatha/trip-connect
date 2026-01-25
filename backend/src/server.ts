@@ -17,6 +17,7 @@ import groupRoutes from './routes/groups';
 import itineraryRoutes from './routes/itineraries';
 import expenseRoutes from './routes/expenses';
 import messageRoutes from './routes/messages';
+import userRoutes from './routes/users';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -225,6 +226,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/groups/:groupId/itineraries', itineraryRoutes);
 app.use('/api/groups/:groupId/expenses', expenseRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
