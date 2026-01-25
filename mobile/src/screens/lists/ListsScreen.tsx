@@ -8,6 +8,7 @@ import { apiService } from '../../services/api';
 import { List, RootStackParamList } from '../../types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DelightfulError from '../../components/DelightfulError';
+import EmptyState from '../../components/EmptyState';
 
 type ListsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Lists'>;
 
@@ -75,11 +76,22 @@ const ListsScreen: React.FC = () => {
           <RefreshControl refreshing={isLoading} onRefresh={() => refetch()} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text variant="bodyLarge" style={styles.emptyText}>
-              No lists found
-            </Text>
-          </View>
+          !isLoading && (
+            <EmptyState
+              icon={<Icon name="format-list-bulleted" size={64} color="#9CA3AF" />}
+              title="No lists yet"
+              description="Lists are automatically created when you create tags and assign them to contacts. Start by creating some tags!"
+              actionButton={{
+                label: "Go to Tags",
+                onPress: () => navigation.navigate('Tags')
+              }}
+              examples={[
+                "Create a 'Language: Spanish' tag",
+                "Assign it to contacts who speak Spanish",
+                "A Smart List is automatically created!"
+              ]}
+            />
+          )
         }
       />
     </View>

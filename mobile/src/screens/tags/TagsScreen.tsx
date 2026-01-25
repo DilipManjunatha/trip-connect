@@ -7,6 +7,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { apiService } from '../../services/api';
 import { Tag, RootStackParamList } from '../../types';
 import DelightfulError from '../../components/DelightfulError';
+import EmptyState from '../../components/EmptyState';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type TagsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Tags'>;
 
@@ -61,11 +63,22 @@ const TagsScreen: React.FC = () => {
           <RefreshControl refreshing={isLoading} onRefresh={() => refetch()} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text variant="bodyLarge" style={styles.emptyText}>
-              No tags found
-            </Text>
-          </View>
+          !isLoading && (
+            <EmptyState
+              icon={<Icon name="tag-outline" size={64} color="#9CA3AF" />}
+              title="No tags yet"
+              description="Tags help you organize contacts into categories. When you create a tag and assign it to contacts, a Smart List is automatically created!"
+              actionButton={{
+                label: "Create Your First Tag",
+                onPress: () => navigation.navigate('TagForm', {})
+              }}
+              examples={[
+                "Language: Spanish - for Spanish speakers",
+                "Skill: Photography - for photographers",
+                "Status: VIP - for important contacts"
+              ]}
+            />
+          )
         }
       />
       <FAB

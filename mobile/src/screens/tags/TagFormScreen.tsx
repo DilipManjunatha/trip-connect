@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
+import { TextInput, Button, Card, Text } from 'react-native-paper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { apiService } from '../../services/api';
 import { Tag, RootStackParamList } from '../../types';
+import InfoTooltip from '../../components/InfoTooltip';
 
 type TagFormScreenRouteProp = RouteProp<RootStackParamList, 'TagForm'>;
 type TagFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TagForm'>;
@@ -79,31 +80,64 @@ const TagFormScreen: React.FC = () => {
     >
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
-          <TextInput
-            label="Tag Name *"
-            value={formData.name}
-            onChangeText={(text) => setFormData({ ...formData, name: text })}
-            mode="outlined"
-            style={styles.input}
-          />
+          {/* Examples Section for new tags */}
+          {!isEditing && (
+            <Card style={styles.examplesCard}>
+              <Card.Content>
+                <Text variant="labelLarge" style={styles.examplesTitle}>
+                  💡 Common tag patterns:
+                </Text>
+                <Text variant="bodySmall" style={styles.exampleText}>
+                  • <Text style={styles.boldText}>Language:</Text> Spanish, English, French
+                </Text>
+                <Text variant="bodySmall" style={styles.exampleText}>
+                  • <Text style={styles.boldText}>Skill:</Text> Photography, Cooking
+                </Text>
+                <Text variant="bodySmall" style={styles.exampleText}>
+                  • <Text style={styles.boldText}>Status:</Text> VIP, Active, Pending
+                </Text>
+                <Text variant="bodySmall" style={styles.exampleText}>
+                  • <Text style={styles.boldText}>Relationship:</Text> Family, Friend
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
 
-          <TextInput
-            label="Value (optional)"
-            value={formData.value}
-            onChangeText={(text) => setFormData({ ...formData, value: text })}
-            mode="outlined"
-            style={styles.input}
-            placeholder="e.g., Spanish, Photography"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              label="Tag Name *"
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+              mode="outlined"
+              style={styles.input}
+              placeholder="e.g., Language, Skill, Status"
+            />
+            <InfoTooltip content="Categories to organize contacts (e.g., Language, Skill, Status, Relationship)" />
+          </View>
 
-          <TextInput
-            label="Color"
-            value={formData.color}
-            onChangeText={(text) => setFormData({ ...formData, color: text })}
-            mode="outlined"
-            style={styles.input}
-            placeholder="#3B82F6"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              label="Value (optional)"
+              value={formData.value}
+              onChangeText={(text) => setFormData({ ...formData, value: text })}
+              mode="outlined"
+              style={styles.input}
+              placeholder="e.g., Spanish, Photography, VIP"
+            />
+            <InfoTooltip content="Optional specific value (e.g., Spanish for Language tag, Photography for Skill tag)" />
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <TextInput
+              label="Color"
+              value={formData.color}
+              onChangeText={(text) => setFormData({ ...formData, color: text })}
+              mode="outlined"
+              style={styles.input}
+              placeholder="#3B82F6"
+            />
+            <InfoTooltip content="Choose a color to visually identify this tag and its associated list" />
+          </View>
 
           <TextInput
             label="Description"
@@ -114,6 +148,18 @@ const TagFormScreen: React.FC = () => {
             numberOfLines={3}
             style={styles.input}
           />
+
+          {/* Info about automatic list creation */}
+          <Card style={styles.infoCard}>
+            <Card.Content>
+              <Text variant="labelMedium" style={styles.infoTitle}>
+                What happens after creation?
+              </Text>
+              <Text variant="bodySmall" style={styles.infoText}>
+                When you assign this tag to contacts, a Smart List will be automatically created. The list will update automatically as you add or remove this tag from contacts.
+              </Text>
+            </Card.Content>
+          </Card>
 
           <Button
             mode="contained"
@@ -142,6 +188,36 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
+    flex: 1,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  examplesCard: {
+    marginBottom: 16,
+    backgroundColor: '#F9FAFB',
+  },
+  examplesTitle: {
+    marginBottom: 8,
+  },
+  exampleText: {
+    marginTop: 4,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  infoCard: {
+    marginBottom: 16,
+    backgroundColor: '#EFF6FF',
+  },
+  infoTitle: {
+    color: '#1E40AF',
+    marginBottom: 4,
+  },
+  infoText: {
+    color: '#3B82F6',
   },
   button: {
     marginTop: 8,
