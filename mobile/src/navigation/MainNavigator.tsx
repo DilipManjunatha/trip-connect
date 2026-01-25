@@ -16,6 +16,8 @@ import GroupFormScreen from '../screens/groups/GroupFormScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
 import ItineraryScreen from '../screens/groups/ItineraryScreen';
 import ExpensesScreen from '../screens/groups/ExpensesScreen';
+import UsersScreen from '../screens/users/UsersScreen';
+import UserDetailScreen from '../screens/users/UserDetailScreen';
 import { RootStackParamList } from '../types';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
@@ -119,6 +121,21 @@ const TagsStack = () => (
   </Stack.Navigator>
 );
 
+const UsersStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen
+      name="Users"
+      component={UsersScreen}
+      options={{ title: 'Users' }}
+    />
+    <Stack.Screen
+      name="UserDetail"
+      component={UserDetailScreen}
+      options={{ title: 'User Details' }}
+    />
+  </Stack.Navigator>
+);
+
 const MainNavigator: React.FC = () => {
   const { user } = useAuth();
   const adminOnly = isAdmin(user);
@@ -181,6 +198,16 @@ const MainNavigator: React.FC = () => {
               title: 'Tags',
               tabBarIcon: ({ color, size }) => (
                 <Icon name="tag" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="UsersTab"
+            component={UsersStack}
+            options={{
+              title: 'Users',
+              tabBarIcon: ({ color, size }) => (
+                <Icon name="account-cog" size={size} color={color} />
               ),
             }}
           />

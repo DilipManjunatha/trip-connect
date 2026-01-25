@@ -299,6 +299,36 @@ class ApiService {
   async deleteExpense(groupId: string, expenseId: string): Promise<void> {
     await this.client.delete(`/groups/${groupId}/expenses/${expenseId}`);
   }
+
+  // User Management APIs
+  async getUsers(): Promise<User[]> {
+    const response = await this.client.get<{ success: boolean; data: User[] }>('/users');
+    return response.data.data;
+  }
+
+  async getUser(id: string): Promise<User> {
+    const response = await this.client.get<{ success: boolean; data: User }>(`/users/${id}`);
+    return response.data.data;
+  }
+
+  async updateUserRole(id: string, role: 'USER' | 'ADMIN'): Promise<User> {
+    const response = await this.client.put<{ success: boolean; data: User }>(`/users/${id}/role`, { role });
+    return response.data.data;
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<User> {
+    const response = await this.client.put<{ success: boolean; data: User }>(`/users/${id}`, data);
+    return response.data.data;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.client.delete(`/users/${id}`);
+  }
+
+  async getUserStats(): Promise<{ totalUsers: number; adminUsers: number; regularUsers: number; recentUsers: number }> {
+    const response = await this.client.get<{ success: boolean; data: any }>('/users/stats');
+    return response.data.data;
+  }
 }
 
 export const apiService = new ApiService();

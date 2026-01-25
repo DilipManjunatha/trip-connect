@@ -9,6 +9,19 @@ export interface User {
   role: 'USER' | 'ADMIN';
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    contacts: number;
+    tripGroups: number;
+    messages: number;
+    groupMembers: number;
+  };
+}
+
+export interface UserStats {
+  totalUsers: number;
+  adminUsers: number;
+  regularUsers: number;
+  recentUsers: number;
 }
 
 export interface AuthResponse {
@@ -155,4 +168,7 @@ export type RootStackParamList = {
   Messages: { groupId: string };
   Itinerary: { groupId: string };
   Expenses: { groupId: string };
+  Users: undefined;
+  UserDetail: { userId: string };
+  UserForm: { userId?: string };
 };
