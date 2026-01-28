@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { TripGroup, GroupMember, Contact } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserGroupIcon, MapPinIcon, CalendarIcon, CurrencyDollarIcon, UserPlusIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, UserGroupIcon, MapPinIcon, CalendarIcon, CurrencyDollarIcon, UserPlusIcon, ClockIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Modal, FormField, Select } from '../components/ui';
+import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const statusColors: Record<string, string> = {
   PLANNING: 'bg-blue-100 text-blue-800',
@@ -40,6 +40,7 @@ const Groups: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
+  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -106,16 +107,6 @@ const Groups: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingGroup(null);
-    setFormData({
-      name: '',
-      description: '',
-      destination: '',
-      startDate: '',
-      endDate: '',
-      budget: '',
-      status: 'PLANNING',
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -158,6 +149,13 @@ const Groups: React.FC = () => {
       toast.error('Failed to delete group');
     }
   };
+
+  const openActionsFor = (group: TripGroup) => {
+    setSelectedGroup(group);
+    setShowActions(true);
+  };
+
+  const closeActions = () => setShowActions(false);
 
   const handleOpenMembersModal = (group: TripGroup) => {
     setSelectedGroup(group);
@@ -221,160 +219,192 @@ const Groups: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Trip Groups</h1>
-        {isAdmin(user) && (
-          <Button
-            onClick={() => handleOpenModal()}
-            leftIcon={<PlusIcon className="h-5 w-5" />}
-            className="w-full sm:w-auto"
-          >
-            New Trip Group
-          </Button>
-        )}
-      </div>
+    <div className="space-y-4">
+      <LargeTitleHeader
+        title="Trip Groups"
+        action={
+          isAdmin(user) ? (
+            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+              New
+            </Button>
+          ) : null
+        }
+      />
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-lg shadow">
-        <Input
-          type="text"
-          placeholder="Search trip groups..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border-0 shadow-none"
-        />
-      </div>
+      <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search groups" />
 
       {filteredGroups.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroups.map((group) => (
-            <div
-              key={group.id}
-              className={`bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden ${
-                selectedGroup?.id === group.id ? 'ring-2 ring-blue-500' : ''
-              }`}
-              onClick={() => setSelectedGroup(group)}
-            >
-              {group.coverImage && (
-                <div
-                  className="h-40 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${group.coverImage})` }}
-                />
-              )}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900 flex-1">{group.name}</h3>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded ${statusColors[group.status]}`}>
-                    {group.status}
-                  </span>
-                </div>
-
-                {group.destination && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <MapPinIcon className="h-4 w-4" />
-                    {group.destination}
+        <>
+          {/* Mobile: iOS-style grouped list */}
+          <div className="md:hidden">
+            <GroupedList>
+              {filteredGroups.map((group, idx) => {
+                const subtitle = group.destination
+                  ? group.destination
+                  : group.startDate
+                  ? new Date(group.startDate).toLocaleDateString()
+                  : '';
+                return (
+                  <div key={group.id}>
+                    <ListRow
+                      title={group.name}
+                      subtitle={subtitle}
+                      leading={<UserGroupIcon className="h-6 w-6 text-gray-400" />}
+                      trailing={
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openActionsFor(group);
+                          }}
+                          className="rounded-full p-2 text-gray-500 hover:bg-gray-100 active:bg-gray-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          aria-label={`Actions for ${group.name}`}
+                        >
+                          <EllipsisHorizontalIcon className="h-5 w-5" />
+                        </button>
+                      }
+                      onClick={() => setSelectedGroup(group)}
+                      showChevron={false}
+                    />
+                    {idx !== filteredGroups.length - 1 ? (
+                      <div className="mx-4 h-px bg-gray-100" />
+                    ) : null}
                   </div>
-                )}
+                );
+              })}
+            </GroupedList>
+          </div>
 
-                {group.startDate && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <CalendarIcon className="h-4 w-4" />
-                    {new Date(group.startDate).toLocaleDateString()}
-                    {group.endDate && ` - ${new Date(group.endDate).toLocaleDateString()}`}
+          {/* Desktop: keep existing cards */}
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGroups.map((group) => (
+              <div
+                key={group.id}
+                className={`bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden ${
+                  selectedGroup?.id === group.id ? 'ring-2 ring-blue-500' : ''
+                }`}
+                onClick={() => setSelectedGroup(group)}
+              >
+                {group.coverImage && (
+                  <div
+                    className="h-40 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${group.coverImage})` }}
+                  />
+                )}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900 flex-1">{group.name}</h3>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded ${statusColors[group.status]}`}>
+                      {group.status}
+                    </span>
                   </div>
-                )}
 
-                {group.budget && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <CurrencyDollarIcon className="h-4 w-4" />
-                    Budget: ${group.budget.toFixed(2)}
+                  {group.destination && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <MapPinIcon className="h-4 w-4" />
+                      {group.destination}
+                    </div>
+                  )}
+
+                  {group.startDate && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      {new Date(group.startDate).toLocaleDateString()}
+                      {group.endDate && ` - ${new Date(group.endDate).toLocaleDateString()}`}
+                    </div>
+                  )}
+
+                  {group.budget && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <CurrencyDollarIcon className="h-4 w-4" />
+                      Budget: ${group.budget.toFixed(2)}
+                    </div>
+                  )}
+
+                  {group.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{group.description}</p>
+                  )}
+
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4 pt-4 border-t">
+                    <div className="flex items-center gap-1">
+                      <UserGroupIcon className="h-4 w-4" />
+                      {group._count?.members || 0} members
+                    </div>
+                    <span>{group._count?.expenses || 0} expenses</span>
                   </div>
-                )}
 
-                {group.description && (
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{group.description}</p>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4 pt-4 border-t">
-                  <div className="flex items-center gap-1">
-                    <UserGroupIcon className="h-4 w-4" />
-                    {group._count?.members || 0} members
-                  </div>
-                  <span>{group._count?.expenses || 0} expenses</span>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/expenses?groupId=${group.id}`);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="text-blue-700 bg-blue-50 hover:bg-blue-100"
-                    leftIcon={<CurrencyDollarIcon className="h-4 w-4" />}
-                  >
-                    Expenses
-                  </Button>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/itinerary?groupId=${group.id}`);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="text-purple-700 bg-purple-50 hover:bg-purple-100"
-                    leftIcon={<ClockIcon className="h-4 w-4" />}
-                  >
-                    Itinerary
-                  </Button>
-                </div>
-
-                {isAdmin(user) && (
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpenMembersModal(group);
+                        navigate(`/expenses?groupId=${group.id}`);
                       }}
                       variant="outline"
                       size="sm"
-                      className="text-blue-700 border-blue-300 hover:bg-blue-50"
-                      title="Manage Members"
+                      className="text-blue-700 bg-blue-50 hover:bg-blue-100"
+                      leftIcon={<CurrencyDollarIcon className="h-4 w-4" />}
                     >
-                      <UserPlusIcon className="h-4 w-4" />
+                      Expenses
                     </Button>
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpenModal(group);
+                        navigate(`/itinerary?groupId=${group.id}`);
                       }}
                       variant="outline"
                       size="sm"
-                      title="Edit"
+                      className="text-purple-700 bg-purple-50 hover:bg-purple-100"
+                      leftIcon={<ClockIcon className="h-4 w-4" />}
                     >
-                      <PencilSquareIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(group.id);
-                      }}
-                      variant="danger"
-                      size="sm"
-                      title="Delete"
-                    >
-                      <TrashIcon className="h-4 w-4" />
+                      Itinerary
                     </Button>
                   </div>
-                )}
+
+                  {isAdmin(user) && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenMembersModal(group);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-blue-700 border-blue-300 hover:bg-blue-50"
+                        title="Manage Members"
+                      >
+                        <UserPlusIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenModal(group);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        title="Edit"
+                      >
+                        <PencilSquareIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(group.id);
+                        }}
+                        variant="danger"
+                        size="sm"
+                        title="Delete"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
         ) : (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No trip groups found</p>
@@ -392,6 +422,18 @@ const Groups: React.FC = () => {
       <Modal
         open={showModal}
         onClose={handleCloseModal}
+        onAfterClose={() => {
+          setEditingGroup(null);
+          setFormData({
+            name: '',
+            description: '',
+            destination: '',
+            startDate: '',
+            endDate: '',
+            budget: '',
+            status: 'PLANNING',
+          });
+        }}
         title={editingGroup ? 'Edit Trip Group' : 'Create New Trip Group'}
         size="md"
       >
@@ -478,6 +520,90 @@ const Groups: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ActionSheet open={showActions} onClose={closeActions} title={selectedGroup ? selectedGroup.name : 'Actions'}>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedGroup) return;
+              const id = selectedGroup.id;
+              closeActions();
+              navigate(`/expenses?groupId=${id}`);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <CurrencyDollarIcon className="h-5 w-5 text-gray-500" />
+              Expenses
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedGroup) return;
+              const id = selectedGroup.id;
+              closeActions();
+              navigate(`/itinerary?groupId=${id}`);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <ClockIcon className="h-5 w-5 text-gray-500" />
+              Itinerary
+            </span>
+          </button>
+          {isAdmin(user) ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedGroup) return;
+                  const g = selectedGroup;
+                  closeActions();
+                  handleOpenMembersModal(g);
+                }}
+                className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <UserPlusIcon className="h-5 w-5 text-gray-500" />
+                  Members
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedGroup) return;
+                  const g = selectedGroup;
+                  closeActions();
+                  handleOpenModal(g);
+                }}
+                className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <PencilSquareIcon className="h-5 w-5 text-gray-500" />
+                  Edit
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedGroup) return;
+                  const id = selectedGroup.id;
+                  closeActions();
+                  handleDelete(id);
+                }}
+                className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <TrashIcon className="h-5 w-5 text-error-500" />
+                  Delete
+                </span>
+              </button>
+            </>
+          ) : null}
+        </div>
+      </ActionSheet>
 
       {/* Members Management Modal */}
       <Modal

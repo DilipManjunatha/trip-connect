@@ -5,7 +5,7 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, CheckIcon, QueueListIcon } from 
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { Button, Input, Modal, FormField, Select } from '../components/ui';
+import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const Lists: React.FC = () => {
   const [lists, setLists] = useState<List[]>([]);
@@ -24,6 +24,7 @@ const Lists: React.FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showDescription, setShowDescription] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -89,13 +90,6 @@ const Lists: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingList(null);
-    setFormData({
-      name: '',
-      description: '',
-      isAutomatic: false,
-      tagId: '',
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,6 +123,13 @@ const Lists: React.FC = () => {
     }
   };
 
+  const openActionsFor = (listId: string) => {
+    setSelectedListId(listId);
+    setShowActions(true);
+  };
+
+  const closeActions = () => setShowActions(false);
+
   const filteredLists = lists.filter(
     (list) =>
       list.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,31 +153,109 @@ const Lists: React.FC = () => {
   const listContacts = selectedList?.members?.map(m => m.contact).filter(Boolean) as Contact[] || [];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Smart Lists</h1>
-        <Button
-          onClick={() => handleOpenModal()}
-          leftIcon={<PlusIcon className="h-5 w-5" />}
-          className="w-full sm:w-auto"
-        >
-          New List
-        </Button>
+    <div className="space-y-4">
+      <LargeTitleHeader
+        title="Smart Lists"
+        action={
+          <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+            New
+          </Button>
+        }
+      />
+
+      <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search lists" />
+
+      {/* Mobile: iOS-style list + details below */}
+      <div className="lg:hidden space-y-4">
+        {filteredLists.length > 0 ? (
+          <GroupedList>
+            {filteredLists.map((list, idx) => (
+              <div key={list.id}>
+                <ListRow
+                  title={list.name}
+                  subtitle={`${list._count?.members || 0} contacts${list.isAutomatic ? ' • Automatic' : ''}`}
+                  leading={<QueueListIcon className="h-6 w-6 text-gray-400" />}
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openActionsFor(list.id);
+                      }}
+                      className="rounded-full p-2 text-gray-500 hover:bg-gray-100 active:bg-gray-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`Actions for ${list.name}`}
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                  }
+                  onClick={() => setSelectedListId(list.id)}
+                  showChevron={false}
+                />
+                {idx !== filteredLists.length - 1 ? (
+                  <div className="mx-4 h-px bg-gray-100" />
+                ) : null}
+              </div>
+            ))}
+          </GroupedList>
+        ) : (
+          <EmptyState
+            icon={<QueueListIcon className="h-16 w-16" />}
+            title="No lists yet"
+            description="Create a list to organize your contacts."
+            actionButton={{
+              label: "Create List",
+              onClick: () => handleOpenModal()
+            }}
+          />
+        )}
+
+        {selectedList ? (
+          <div className="bg-white rounded-2xl ring-1 ring-black/5 p-4 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-[22px] leading-7 font-bold text-gray-900">{selectedList.name}</h2>
+                {selectedList.description ? (
+                  <p className="text-sm text-gray-600 mt-1">{selectedList.description}</p>
+                ) : null}
+              </div>
+              <Button onClick={() => handleDelete(selectedList.id)} variant="danger" size="sm">
+                Delete
+              </Button>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Members</h3>
+              {listContacts.length > 0 ? (
+                <div className="space-y-2">
+                  {listContacts.map((contact) => (
+                    <div key={contact.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {contact.firstName} {contact.lastName}
+                        </p>
+                        {contact.email ? (
+                          <p className="text-sm text-gray-500 truncate">{contact.email}</p>
+                        ) : null}
+                      </div>
+                      <CheckIcon className="h-5 w-5 text-green-600" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-6">No contacts in this list</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl ring-1 ring-black/5 p-6 text-center">
+            <p className="text-gray-500">Select a list to view details</p>
+          </div>
+        )}
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-lg shadow">
-        <Input
-          type="text"
-          placeholder="Search lists..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border-0 shadow-none"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Desktop: keep existing 2-pane layout */}
+      <div className="hidden lg:grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lists Sidebar */}
         <div className="space-y-2">
           {filteredLists.length > 0 ? (
@@ -301,6 +380,16 @@ const Lists: React.FC = () => {
       <Modal
         open={showModal}
         onClose={handleCloseModal}
+        onAfterClose={() => {
+          setEditingList(null);
+          setFormData({
+            name: '',
+            description: '',
+            isAutomatic: false,
+            tagId: '',
+          });
+          setShowDescription(false);
+        }}
         title={editingList ? 'Edit List' : 'Create New List'}
         size="md"
       >
@@ -382,6 +471,40 @@ const Lists: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ActionSheet open={showActions} onClose={closeActions} title={selectedList ? selectedList.name : 'Actions'}>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedList) return;
+              closeActions();
+              handleOpenModal(selectedList);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <PencilSquareIcon className="h-5 w-5 text-gray-500" />
+              Edit
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedList) return;
+              const id = selectedList.id;
+              closeActions();
+              handleDelete(id);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <TrashIcon className="h-5 w-5 text-error-500" />
+              Delete
+            </span>
+          </button>
+        </div>
+      </ActionSheet>
     </div>
   );
 };

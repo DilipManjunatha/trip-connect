@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,6 +13,8 @@ import { apiService } from '../../services/api';
 import { theme } from '../../theme';
 import DelightfulError from '../../components/DelightfulError';
 import { useAuth } from '../../context/AuthContext';
+import { ActionSheet, GroupedList, LargeTitleHeader, ListRow, SearchField } from '../../components/apple';
+import { Text } from 'react-native-paper';
 
 type UsersScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Users'>;
 
@@ -30,6 +29,10 @@ const UsersScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showActions, setShowActions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -64,141 +67,17 @@ const UsersScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleToggleRole = (user: User) => {
     const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
-    const action = newRole === 'ADMIN' ? 'promote' : 'demote';
-
-    Alert.alert(
-      `${action === 'promote' ? 'Promote' : 'Demote'} User`,
-      `Are you sure you want to ${action} ${user.firstName} ${user.lastName} to ${newRole}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              await apiService.updateUserRole(user.id, newRole);
-              Alert.alert('Success', `User role updated to ${newRole}`);
-              fetchUsers();
-            } catch (err: any) {
-              Alert.alert('Error', err.response?.data?.message || 'Failed to update role');
-            }
-          },
-        },
-      ]
-    );
+    apiService
+      .updateUserRole(user.id, newRole)
+      .then(() => fetchUsers())
+      .catch(() => {});
   };
 
   const handleDeleteUser = (user: User) => {
-    Alert.alert(
-      'Delete User',
-      `Are you sure you want to delete ${user.firstName} ${user.lastName}? This action cannot be undone and will delete all associated data.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await apiService.deleteUser(user.id);
-              Alert.alert('Success', 'User deleted successfully');
-              fetchUsers();
-            } catch (err: any) {
-              Alert.alert('Error', err.response?.data?.message || 'Failed to delete user');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderStatCard = (icon: string, label: string, value: number, color: string) => (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
-      <Icon name={icon} size={24} color={color} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-
-  const renderUser = ({ item }: { item: User }) => {
-    const isCurrentUser = item.id === currentUser?.id;
-
-    return (
-      <TouchableOpacity
-        style={styles.userCard}
-        onPress={() => navigation.navigate('UserDetail', { userId: item.id })}
-      >
-        <View style={styles.userAvatar}>
-          {item.avatar ? (
-            <Icon name="account" size={32} color={theme.colors.primary} />
-          ) : (
-            <Text style={styles.userAvatarText}>
-              {item.firstName[0]}
-              {item.lastName[0]}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.userInfo}>
-          <View style={styles.userHeader}>
-            <Text style={styles.userName}>
-              {item.firstName} {item.lastName}
-            </Text>
-            {isCurrentUser && <Text style={styles.youBadge}>(You)</Text>}
-          </View>
-          <Text style={styles.userEmail}>{item.email}</Text>
-          <Text style={styles.userUsername}>@{item.username}</Text>
-
-          <View style={styles.userMeta}>
-            <View
-              style={[
-                styles.roleBadge,
-                item.role === 'ADMIN' ? styles.adminBadge : styles.userBadge,
-              ]}
-            >
-              <Icon
-                name={item.role === 'ADMIN' ? 'shield-check' : 'account'}
-                size={14}
-                color={item.role === 'ADMIN' ? '#059669' : '#2563eb'}
-              />
-              <Text
-                style={[
-                  styles.roleText,
-                  item.role === 'ADMIN' ? styles.adminText : styles.userText,
-                ]}
-              >
-                {item.role}
-              </Text>
-            </View>
-
-            {item._count && (
-              <Text style={styles.activityText}>
-                {item._count.contacts} contacts • {item._count.tripGroups} groups
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {!isCurrentUser && (
-          <View style={styles.userActions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleToggleRole(item)}
-            >
-              <Icon
-                name={item.role === 'ADMIN' ? 'account' : 'shield-check'}
-                size={20}
-                color={item.role === 'ADMIN' ? '#f59e0b' : '#059669'}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleDeleteUser(item)}
-            >
-              <Icon name="delete" size={20} color="#ef4444" />
-            </TouchableOpacity>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
+    apiService
+      .deleteUser(user.id)
+      .then(() => fetchUsers())
+      .catch(() => {});
   };
 
   if (error) {
@@ -215,34 +94,126 @@ const UsersScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {stats && (
-        <View style={styles.statsContainer}>
-          {renderStatCard('account-group', 'Total Users', stats.totalUsers, theme.colors.primary)}
-          {renderStatCard('shield-check', 'Admins', stats.adminUsers, '#059669')}
-          {renderStatCard('account', 'Users', stats.regularUsers, '#2563eb')}
-          {renderStatCard('account-clock', 'Recent', stats.recentUsers, '#8b5cf6')}
-        </View>
-      )}
+      <LargeTitleHeader title="Users" />
+      <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search users" />
 
-      <FlatList
-        data={users}
-        keyExtractor={(item) => item.id}
-        renderItem={renderUser}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[theme.colors.primary]}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="account-group" size={64} color="#d1d5db" />
-            <Text style={styles.emptyText}>No users found</Text>
-          </View>
-        }
-      />
+      <GroupedList>
+        <FlatList
+          data={users.filter((u) => {
+            const q = searchQuery.trim().toLowerCase();
+            if (!q) return true;
+            return (
+              `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+              u.email.toLowerCase().includes(q) ||
+              u.username.toLowerCase().includes(q)
+            );
+          })}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+          }
+          renderItem={({ item, index, separators }) => {
+            const isCurrentUser = item.id === currentUser?.id;
+            return (
+              <ListRow
+                title={`${item.firstName} ${item.lastName}${isCurrentUser ? ' (You)' : ''}`}
+                subtitle={`${item.email} • @${item.username} • ${item.role}`}
+                left={
+                  <View style={styles.avatarWrap}>
+                    <Text style={styles.avatarText}>
+                      {item.firstName?.[0]}
+                      {item.lastName?.[0]}
+                    </Text>
+                  </View>
+                }
+                right={
+                  !isCurrentUser ? (
+                    <Icon
+                      name="dots-horizontal"
+                      size={20}
+                      color="#6B7280"
+                      onPress={() => {
+                        setSelectedUser(item);
+                        setShowActions(true);
+                      }}
+                    />
+                  ) : null
+                }
+                onPress={() => navigation.navigate('UserDetail', { userId: item.id })}
+                showChevron
+                isLast={index === users.length - 1}
+              />
+            );
+          }}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Icon name="account-group" size={64} color="#d1d5db" />
+              <Text style={styles.emptyText}>No users found</Text>
+            </View>
+          }
+        />
+      </GroupedList>
+
+      <ActionSheet
+        visible={showActions}
+        onClose={() => setShowActions(false)}
+        title={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : 'Actions'}
+      >
+        <View>
+          <Text
+            style={styles.sheetItem}
+            onPress={() => {
+              if (!selectedUser) return;
+              setShowActions(false);
+              handleToggleRole(selectedUser);
+            }}
+          >
+            {selectedUser?.role === 'ADMIN' ? 'Demote to User' : 'Promote to Admin'}
+          </Text>
+          <Text
+            style={styles.sheetItem}
+            onPress={() => {
+              if (!selectedUser) return;
+              setShowActions(false);
+              navigation.navigate('UserDetail', { userId: selectedUser.id });
+            }}
+          >
+            View details
+          </Text>
+          <Text
+            style={[styles.sheetItem, styles.destructive]}
+            onPress={() => {
+              setShowActions(false);
+              setShowDeleteConfirm(true);
+            }}
+          >
+            Delete
+          </Text>
+        </View>
+      </ActionSheet>
+
+      <ActionSheet
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete user?"
+      >
+        <View>
+          <Text style={styles.sheetHelp}>
+            This action cannot be undone and may delete associated data.
+          </Text>
+          <Text
+            style={[styles.sheetItem, styles.destructive]}
+            onPress={() => {
+              if (!selectedUser) return;
+              setShowDeleteConfirm(false);
+              handleDeleteUser(selectedUser);
+            }}
+          >
+            Confirm delete
+          </Text>
+        </View>
+      </ActionSheet>
     </View>
   );
 };
@@ -250,141 +221,28 @@ const UsersScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#F2F2F7',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 16,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: 150,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
   listContent: {
-    padding: 16,
+    paddingBottom: 24,
   },
-  userCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
+  avatarWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0F2FE',
     alignItems: 'center',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  userAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#e0f2fe',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
   },
-  userAvatarText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  youBadge: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginLeft: 8,
-  },
-  userEmail: {
+  avatarText: {
     fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 2,
-  },
-  userUsername: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginBottom: 8,
-  },
-  userMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  adminBadge: {
-    backgroundColor: '#d1fae5',
-  },
-  userBadge: {
-    backgroundColor: '#dbeafe',
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  adminText: {
-    color: '#059669',
-  },
-  userText: {
-    color: '#2563eb',
-  },
-  activityText: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  userActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    padding: 8,
+    fontWeight: '700',
+    color: theme.colors.primary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -395,6 +253,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#9ca3af',
     marginTop: 16,
+  },
+  sheetItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 17,
+    color: '#111827',
+  },
+  destructive: {
+    color: '#EF4444',
+    fontWeight: '700',
+  },
+  sheetHelp: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    fontSize: 13,
+    color: '#6B7280',
   },
 });
 

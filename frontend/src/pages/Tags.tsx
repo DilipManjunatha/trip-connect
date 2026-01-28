@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
 import { Tag } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, TagIcon } from '@heroicons/react/24/outline';
+import { EllipsisHorizontalIcon, PencilSquareIcon, PlusIcon, TagIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { Button, Input, Modal, FormField } from '../components/ui';
+import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
 
 const Tags: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -21,6 +21,9 @@ const Tags: React.FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showValueField, setShowValueField] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
+  const [showActions, setShowActions] = useState(false);
+  const [showDeleteBlocked, setShowDeleteBlocked] = useState(false);
 
   const colors = [
     '#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981',
@@ -82,14 +85,6 @@ const Tags: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingTag(null);
-    setShowValueField(false);
-    setFormData({
-      name: '',
-      value: '',
-      color: '#3B82F6',
-      description: '',
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,16 +108,13 @@ const Tags: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const tag = tags.find(t => t.id === id);
+    const tag = tags.find((t) => t.id === id);
     const contactCount = tag?._count?.contacts || 0;
-    
-    let confirmMessage = 'Are you sure you want to delete this tag?';
     if (contactCount > 0) {
-      confirmMessage = `This tag is assigned to ${contactCount} contact(s). You must remove it from all contacts before deleting. Do you want to continue?`;
+      setShowDeleteBlocked(true);
+      return;
     }
-    
-    if (!confirm(confirmMessage)) return;
-    
+
     try {
       await api.delete(`/tags/${id}`);
       toast.success('Tag deleted successfully');
@@ -137,8 +129,13 @@ const Tags: React.FC = () => {
   const filteredTags = tags.filter(
     (tag) =>
       tag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tag.value?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tag.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const filteredTagsSorted = useMemo(() => {
+    return [...filteredTags].sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredTags]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-96">
@@ -154,97 +151,94 @@ const Tags: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tags</h1>
-        <Button
-          onClick={() => handleOpenModal()}
-          leftIcon={<PlusIcon className="h-5 w-5" />}
-          className="w-full sm:w-auto"
-        >
-          New Tag
-        </Button>
-      </div>
+    <div className="space-y-4">
+      <LargeTitleHeader
+        title="Tags"
+        action={
+          <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+            New
+          </Button>
+        }
+      />
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-lg shadow">
-        <Input
-          type="text"
-          placeholder="Search tags..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border-0 shadow-none"
-        />
-      </div>
+      <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search tags" />
 
-      {/* Tags Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTags.length > 0 ? (
-          filteredTags.map((tag) => (
-            <div key={tag.id} className="bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="w-12 h-12 rounded-full"
-                    style={{ backgroundColor: tag.color }}
-                  />
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{tag.name}</h3>
-                    {tag.value && (
-                      <p className="text-sm text-gray-500">{tag.value}</p>
-                    )}
-                  </div>
-                </div>
-                {tag.description && (
-                  <p className="text-sm text-gray-600 mb-4">{tag.description}</p>
-                )}
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span>{tag._count?.contacts || 0} contacts</span>
-                  <span>{tag._count?.lists || 0} lists</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleOpenModal(tag)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    leftIcon={<PencilSquareIcon className="h-4 w-4" />}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(tag.id)}
-                    disabled={(tag._count?.contacts || 0) > 0}
-                    variant={(tag._count?.contacts || 0) > 0 ? 'ghost' : 'danger'}
-                    size="sm"
-                    className="flex-1"
-                    leftIcon={<TrashIcon className="h-4 w-4" />}
-                    title={(tag._count?.contacts || 0) > 0 ? 'Remove tag from all contacts before deleting' : 'Delete tag'}
-                  >
-                    Delete
-                  </Button>
-                </div>
+      {filteredTagsSorted.length > 0 ? (
+        <GroupedList>
+          {filteredTagsSorted.map((tag, idx) => {
+            const contactCount = tag._count?.contacts || 0;
+            const listCount = tag._count?.lists || 0;
+            const subtitle = [
+              tag.value ? tag.value : null,
+              `${contactCount} contacts`,
+              `${listCount} lists`,
+            ]
+              .filter(Boolean)
+              .join(' • ');
+
+            return (
+              <div key={tag.id}>
+                <ListRow
+                  title={tag.name}
+                  subtitle={subtitle}
+                  leading={
+                    <div
+                      className="h-10 w-10 rounded-full ring-1 ring-black/5"
+                      style={{ backgroundColor: tag.color }}
+                      aria-hidden="true"
+                    />
+                  }
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedTag(tag);
+                        setShowActions(true);
+                      }}
+                      className="rounded-full p-2 text-gray-500 hover:bg-gray-100 active:bg-gray-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`Actions for ${tag.name}`}
+                    >
+                      <EllipsisHorizontalIcon className="h-5 w-5" />
+                    </button>
+                  }
+                  onClick={() => handleOpenModal(tag)}
+                  showChevron={false}
+                />
+                {idx !== filteredTagsSorted.length - 1 ? (
+                  <div className="mx-4 h-px bg-gray-100" />
+                ) : null}
               </div>
-            </div>
-          ))
-        ) : (
-          <EmptyState
-            icon={<TagIcon className="h-16 w-16" />}
-            title="No tags yet"
-            description="Create tags to categorize your contacts."
-            actionButton={{
-              label: "Create Your First Tag",
-              onClick: () => handleOpenModal()
-            }}
-          />
-        )}
-      </div>
+            );
+          })}
+        </GroupedList>
+      ) : (
+        <EmptyState
+          icon={<TagIcon className="h-16 w-16" />}
+          title="No tags yet"
+          description="Create tags to categorize your contacts."
+          actionButton={{
+            label: "Create Your First Tag",
+            onClick: () => handleOpenModal()
+          }}
+        />
+      )}
 
       {/* Modal */}
       <Modal
         open={showModal}
         onClose={handleCloseModal}
+        onAfterClose={() => {
+          setEditingTag(null);
+          setShowValueField(false);
+          setFormData({
+            name: '',
+            value: '',
+            color: '#3B82F6',
+            description: '',
+          });
+        }}
         title={editingTag ? 'Edit Tag' : 'Create New Tag'}
         size="md"
       >
@@ -328,6 +322,54 @@ const Tags: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ActionSheet
+        open={showActions}
+        onClose={() => setShowActions(false)}
+        title={selectedTag ? selectedTag.name : 'Actions'}
+      >
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedTag) return;
+              setShowActions(false);
+              handleOpenModal(selectedTag);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <PencilSquareIcon className="h-5 w-5 text-gray-500" />
+              Edit
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedTag) return;
+              const id = selectedTag.id;
+              setShowActions(false);
+              handleDelete(id);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <TrashIcon className="h-5 w-5 text-error-500" />
+              Delete
+            </span>
+          </button>
+        </div>
+      </ActionSheet>
+
+      <ActionSheet
+        open={showDeleteBlocked}
+        onClose={() => setShowDeleteBlocked(false)}
+        title="Can’t delete tag"
+      >
+        <div className="px-3 py-2 text-sm text-gray-600">
+          This tag is still assigned to one or more contacts. Remove it from all contacts before deleting.
+        </div>
+      </ActionSheet>
     </div>
   );
 };

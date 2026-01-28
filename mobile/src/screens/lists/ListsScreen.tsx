@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Card, Text, Chip } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -9,13 +9,14 @@ import { List, RootStackParamList } from '../../types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DelightfulError from '../../components/DelightfulError';
 import EmptyState from '../../components/EmptyState';
+import { GroupedList, LargeTitleHeader, ListRow } from '../../components/apple';
 
 type ListsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Lists'>;
 
 const ListsScreen: React.FC = () => {
   const navigation = useNavigation<ListsScreenNavigationProp>();
 
-  const { data: lists, isLoading, refetch, error } = useQuery({
+  const { data: lists = [], isLoading, refetch, error } = useQuery({
     queryKey: ['lists'],
     queryFn: () => apiService.getLists(),
   });
@@ -28,72 +29,54 @@ const ListsScreen: React.FC = () => {
     return <DelightfulError onRetry={() => refetch()} />;
   }
 
-  const renderList = ({ item }: { item: List }) => (
-    <Card
-      style={styles.listCard}
-      onPress={() => navigation.navigate('ListDetail', { listId: item.id })}
-    >
-      <Card.Content>
-        <View style={styles.listHeader}>
-          <Icon
-            name={item.isAutomatic ? 'auto-fix' : 'format-list-bulleted'}
-            size={24}
-            color="#3B82F6"
-          />
-          <View style={styles.listInfo}>
-            <Text variant="titleMedium">{item.name}</Text>
-            {item.isAutomatic && item.tag && (
-              <Chip
-                icon="tag"
-                style={styles.autoChip}
-                textStyle={{ fontSize: 10 }}
-              >
-                Auto: {item.tag.name}
-              </Chip>
-            )}
-          </View>
-          <Text variant="bodyMedium" style={styles.memberCount}>
-            {item.members?.length || 0} members
-          </Text>
-        </View>
-        {item.description && (
-          <Text variant="bodySmall" style={styles.description}>
-            {item.description}
-          </Text>
-        )}
-      </Card.Content>
-    </Card>
-  );
-
   return (
     <View style={styles.container}>
-      <FlatList
-        data={lists}
-        renderItem={renderList}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={() => refetch()} />
-        }
-        ListEmptyComponent={
-          !isLoading && (
-            <EmptyState
-              icon={<Icon name="format-list-bulleted" size={64} color="#9CA3AF" />}
-              title="No lists yet"
-              description="Lists are automatically created when you create tags and assign them to contacts. Start by creating some tags!"
-              actionButton={{
-                label: "Go to Tags",
-                onPress: () => navigation.navigate('Tags')
-              }}
-              examples={[
-                "Create a 'Language: Spanish' tag",
-                "Assign it to contacts who speak Spanish",
-                "A Smart List is automatically created!"
-              ]}
+      <LargeTitleHeader title="Lists" />
+
+      <GroupedList>
+        <FlatList
+          data={lists}
+          keyExtractor={(item) => item.id}
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => refetch()} />}
+          renderItem={({ item, index }) => (
+            <ListRow
+              title={item.name}
+              subtitle={`${item.members?.length || 0} members${item.isAutomatic ? ' • Automatic' : ''}`}
+              left={
+                <View style={styles.iconWrap}>
+                  <Icon
+                    name={item.isAutomatic ? 'auto-fix' : 'format-list-bulleted'}
+                    size={22}
+                    color="#3B82F6"
+                  />
+                </View>
+              }
+              onPress={() => navigation.navigate('ListDetail', { listId: item.id })}
+              showChevron
+              isLast={index === lists.length - 1}
             />
-          )
-        }
-      />
+          )}
+          contentContainerStyle={lists.length === 0 ? styles.emptyList : undefined}
+          ListEmptyComponent={
+            !isLoading ? (
+              <EmptyState
+                icon={<Icon name="format-list-bulleted" size={64} color="#9CA3AF" />}
+                title="No lists yet"
+                description="Lists are automatically created when you create tags and assign them to contacts. Start by creating some tags!"
+                actionButton={{
+                  label: "Go to Tags",
+                  onPress: () => navigation.navigate('Tags')
+                }}
+                examples={[
+                  "Create a 'Language: Spanish' tag",
+                  "Assign it to contacts who speak Spanish",
+                  "A Smart List is automatically created!"
+                ]}
+              />
+            ) : null
+          }
+        />
+      </GroupedList>
     </View>
   );
 };
@@ -101,32 +84,18 @@ const ListsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F2F2F7',
   },
-  list: {
-    padding: 16,
+  emptyList: {
+    minHeight: 220,
   },
-  listCard: {
-    marginBottom: 12,
-  },
-  listHeader: {
-    flexDirection: 'row',
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
-    gap: 12,
-  },
-  listInfo: {
-    flex: 1,
-  },
-  autoChip: {
-    marginTop: 4,
-    height: 24,
-  },
-  memberCount: {
-    color: '#6B7280',
-  },
-  description: {
-    color: '#9CA3AF',
-    marginTop: 8,
+    justifyContent: 'center',
   },
   emptyContainer: {
     padding: 32,

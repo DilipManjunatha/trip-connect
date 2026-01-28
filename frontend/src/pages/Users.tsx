@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userService } from '../services';
 import { User } from '../types';
 import toast from 'react-hot-toast';
 import {
+  EllipsisHorizontalIcon,
   UserGroupIcon,
   ShieldCheckIcon,
   UserIcon,
@@ -13,7 +14,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import DelightfulError from '../components/DelightfulError';
-import { Button, Input, Modal, FormField, Select } from '../components/ui';
+import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 interface UserStats {
   totalUsers: number;
@@ -30,8 +31,11 @@ const Users: React.FC = () => {
   const [error, setError] = useState<Error | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [showActions, setShowActions] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
@@ -117,7 +121,7 @@ const Users: React.FC = () => {
     try {
       await userService.delete(userToDelete.id);
       toast.success('User deleted successfully');
-      setShowDeleteModal(false);
+      setShowDeleteSheet(false);
       setUserToDelete(null);
       fetchUsers();
       fetchStats();
@@ -139,8 +143,31 @@ const Users: React.FC = () => {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => {
+      return (
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q)
+      );
+    });
+  }, [users, searchTerm]);
+
+  const openActionsFor = (u: User) => {
+    setSelectedUser(u);
+    setShowActions(true);
+  };
+
   if (error) {
-    return <DelightfulError error={error} onRetry={fetchUsers} />;
+    return (
+      <DelightfulError
+        title="Couldn’t load users"
+        message={error.message || 'Something went wrong while loading users.'}
+        onRetry={fetchUsers}
+      />
+    );
   }
 
   if (loading) {
@@ -152,14 +179,13 @@ const Users: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Manage user accounts and role-based access control
-        </p>
-      </div>
+    <div className="space-y-4">
+      <LargeTitleHeader
+        title="Users"
+        subtitle="Manage user accounts and role-based access control"
+      />
+
+      <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search users" />
 
       {/* Statistics Cards */}
       {stats && (
@@ -231,129 +257,49 @@ const Users: React.FC = () => {
       )}
 
       {/* Users List */}
-      {/* Mobile Card View */}
-      <div className="block md:hidden space-y-4">
-        {users.map((user) => (
-          <div key={user.id} className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center flex-1">
-                <div className="flex-shrink-0 h-12 w-12">
-                  {user.avatar ? (
-                    <img
-                      className="h-12 w-12 rounded-full"
-                      src={user.avatar}
-                      alt=""
-                    />
+      {/* Mobile: iOS-style grouped list */}
+      <div className="block md:hidden">
+        <GroupedList>
+          {filteredUsers.map((u, idx) => (
+            <div key={u.id}>
+              <ListRow
+                title={`${u.firstName} ${u.lastName}${u.id === currentUser?.id ? ' (You)' : ''}`}
+                subtitle={`${u.email} • @${u.username} • ${u.role}`}
+                leading={
+                  u.avatar ? (
+                    <img className="h-10 w-10 rounded-full object-cover" src={u.avatar} alt="" />
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-primary-600 font-medium text-base">
-                        {user.firstName[0]}
-                        {user.lastName[0]}
+                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-primary-600 font-semibold text-sm">
+                        {u.firstName?.[0]}
+                        {u.lastName?.[0]}
                       </span>
                     </div>
-                  )}
-                </div>
-                <div className="ml-3 flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-semibold text-gray-900">
-                      {user.firstName} {user.lastName}
-                    </h3>
-                    {user.id === currentUser?.id && (
-                      <span className="text-xs text-gray-400">(You)</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                  <p className="text-xs text-gray-400 mt-1">@{user.username}</p>
-                </div>
-              </div>
+                  )
+                }
+                trailing={
+                  u.id !== currentUser?.id ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openActionsFor(u);
+                      }}
+                      className="rounded-full p-2 text-gray-500 hover:bg-gray-100 active:bg-gray-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`Actions for ${u.firstName} ${u.lastName}`}
+                    >
+                      <EllipsisHorizontalIcon className="h-5 w-5" />
+                    </button>
+                  ) : null
+                }
+                onClick={() => handleEditUser(u)}
+                showChevron={false}
+              />
+              {idx !== filteredUsers.length - 1 ? <div className="mx-4 h-px bg-gray-100" /> : null}
             </div>
-            <div className="space-y-2 text-sm mb-3">
-              <div className="flex items-center">
-                <span
-                  className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
-                    user.role === 'ADMIN'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
-                  }`}
-                >
-                  {user.role === 'ADMIN' ? (
-                    <span className="flex items-center">
-                      <ShieldCheckIcon className="h-3 w-3 mr-1" />
-                      Admin
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      <UserIcon className="h-3 w-3 mr-1" />
-                      User
-                    </span>
-                  )}
-                </span>
-              </div>
-              {user._count && (
-                <div className="text-gray-600 space-y-1">
-                  <div>{user._count.contacts} contacts • {user._count.tripGroups} groups • {user._count.messages} messages</div>
-                </div>
-              )}
-              <div className="text-gray-500 text-xs">
-                Joined {new Date(user.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-            {user.id !== currentUser?.id && (
-              <div className="flex gap-2 pt-3 border-t border-gray-200">
-                <Button
-                  onClick={() => handleToggleRole(user)}
-                  variant="ghost"
-                  size="sm"
-                  className={
-                    user.role === 'ADMIN'
-                      ? 'text-yellow-600 hover:text-yellow-900 flex-1 min-h-[44px]'
-                      : 'text-green-600 hover:text-green-900 flex-1 min-h-[44px]'
-                  }
-                  title={
-                    user.role === 'ADMIN'
-                      ? 'Demote to User'
-                      : 'Promote to Admin'
-                  }
-                >
-                  {user.role === 'ADMIN' ? (
-                    <>
-                      <UserIcon className="h-5 w-5 mr-1" />
-                      <span className="hidden sm:inline">Demote</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheckIcon className="h-5 w-5 mr-1" />
-                      <span className="hidden sm:inline">Promote</span>
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => handleEditUser(user)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-primary-600 hover:text-primary-900 flex-1 min-h-[44px]"
-                  title="Edit User"
-                >
-                  <PencilIcon className="h-5 w-5 mr-1" />
-                  <span className="hidden sm:inline">Edit</span>
-                </Button>
-                <Button
-                  onClick={() => {
-                    setUserToDelete(user);
-                    setShowDeleteModal(true);
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 hover:text-red-900 flex-1 min-h-[44px]"
-                  title="Delete User"
-                >
-                  <TrashIcon className="h-5 w-5 mr-1" />
-                  <span className="hidden sm:inline">Delete</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </GroupedList>
       </div>
 
       {/* Desktop Table View */}
@@ -398,7 +344,7 @@ const Users: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -501,7 +447,7 @@ const Users: React.FC = () => {
                           <Button
                             onClick={() => {
                               setUserToDelete(user);
-                              setShowDeleteModal(true);
+                              setShowDeleteSheet(true);
                             }}
                             variant="ghost"
                             size="sm"
@@ -529,8 +475,8 @@ const Users: React.FC = () => {
         open={showEditModal}
         onClose={() => {
           setShowEditModal(false);
-          setEditingUser(null);
         }}
+        onAfterClose={() => setEditingUser(null)}
         title="Edit User"
         size="md"
       >
@@ -592,7 +538,6 @@ const Users: React.FC = () => {
               variant="outline"
               onClick={() => {
                 setShowEditModal(false);
-                setEditingUser(null);
               }}
               className="flex-1"
             >
@@ -611,55 +556,72 @@ const Users: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        open={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setUserToDelete(null);
-        }}
-        title={
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-              <TrashIcon className="h-6 w-6 text-red-600" />
-            </div>
-            <span>Delete User</span>
-          </div>
-        }
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Are you sure you want to delete{' '}
-            <strong>
-              {userToDelete?.firstName} {userToDelete?.lastName}
-            </strong>
-            ? This action cannot be undone and will delete all associated
-            data including contacts, groups, and messages.
-          </p>
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowDeleteModal(false);
-                setUserToDelete(null);
-              }}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              onClick={handleDeleteUser}
-              className="flex-1"
-            >
+      <ActionSheet open={showActions} onClose={() => setShowActions(false)} title={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : 'Actions'}>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedUser) return;
+              setShowActions(false);
+              handleToggleRole(selectedUser);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              {selectedUser?.role === 'ADMIN' ? (
+                <UserIcon className="h-5 w-5 text-gray-500" />
+              ) : (
+                <ShieldCheckIcon className="h-5 w-5 text-gray-500" />
+              )}
+              {selectedUser?.role === 'ADMIN' ? 'Demote to User' : 'Promote to Admin'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedUser) return;
+              setShowActions(false);
+              handleEditUser(selectedUser);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <PencilIcon className="h-5 w-5 text-gray-500" />
+              Edit
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedUser) return;
+              setShowActions(false);
+              setUserToDelete(selectedUser);
+              setShowDeleteSheet(true);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <TrashIcon className="h-5 w-5 text-error-500" />
               Delete
-            </Button>
-          </div>
+            </span>
+          </button>
         </div>
-      </Modal>
+      </ActionSheet>
+
+      <ActionSheet open={showDeleteSheet} onClose={() => setShowDeleteSheet(false)} title="Delete user?">
+        <div className="px-3 py-2 text-sm text-gray-600">
+          This action cannot be undone. It may delete associated data including contacts, groups, and messages.
+        </div>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleDeleteUser}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </ActionSheet>
     </div>
   );
 };

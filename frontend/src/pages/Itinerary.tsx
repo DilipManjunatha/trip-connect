@@ -101,16 +101,6 @@ const Itinerary: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingItinerary(null);
-    setFormData({
-      title: '',
-      description: '',
-      location: '',
-      startTime: '',
-      endTime: '',
-      cost: '',
-      notes: '',
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -279,6 +269,18 @@ const Itinerary: React.FC = () => {
       <Modal
         open={showModal}
         onClose={handleCloseModal}
+        onAfterClose={() => {
+          setEditingItinerary(null);
+          setFormData({
+            title: '',
+            description: '',
+            location: '',
+            startTime: '',
+            endTime: '',
+            cost: '',
+            notes: '',
+          });
+        }}
         title={editingItinerary ? 'Edit Itinerary Item' : 'Add New Activity'}
         size="md"
       >

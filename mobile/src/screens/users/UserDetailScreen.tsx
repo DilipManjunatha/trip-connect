@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
-  TouchableOpacity,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,6 +13,8 @@ import { apiService } from '../../services/api';
 import { theme } from '../../theme';
 import DelightfulError from '../../components/DelightfulError';
 import { useAuth } from '../../context/AuthContext';
+import { ActionSheet, GroupedList, LargeTitleHeader, ListRow } from '../../components/apple';
+import { Text } from 'react-native-paper';
 
 type UserDetailScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -34,6 +33,8 @@ const UserDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [showActions, setShowActions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchUser();
@@ -60,52 +61,18 @@ const UserDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     if (!user) return;
 
     const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
-    const action = newRole === 'ADMIN' ? 'promote' : 'demote';
-
-    Alert.alert(
-      `${action === 'promote' ? 'Promote' : 'Demote'} User`,
-      `Are you sure you want to ${action} ${user.firstName} ${user.lastName} to ${newRole}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              await apiService.updateUserRole(user.id, newRole);
-              Alert.alert('Success', `User role updated to ${newRole}`);
-              fetchUser();
-            } catch (err: any) {
-              Alert.alert('Error', err.response?.data?.message || 'Failed to update role');
-            }
-          },
-        },
-      ]
-    );
+    apiService
+      .updateUserRole(user.id, newRole)
+      .then(() => fetchUser())
+      .catch(() => {});
   };
 
   const handleDeleteUser = () => {
     if (!user) return;
-
-    Alert.alert(
-      'Delete User',
-      `Are you sure you want to delete ${user.firstName} ${user.lastName}? This action cannot be undone and will delete all associated data.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await apiService.deleteUser(user.id);
-              Alert.alert('Success', 'User deleted successfully');
-              navigation.goBack();
-            } catch (err: any) {
-              Alert.alert('Error', err.response?.data?.message || 'Failed to delete user');
-            }
-          },
-        },
-      ]
-    );
+    apiService
+      .deleteUser(user.id)
+      .then(() => navigation.goBack())
+      .catch(() => {});
   };
 
   if (error) {
@@ -124,128 +91,103 @@ const UserDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          {user.avatar ? (
-            <Icon name="account" size={64} color={theme.colors.primary} />
-          ) : (
-            <Text style={styles.avatarText}>
-              {user.firstName[0]}
-              {user.lastName[0]}
-            </Text>
-          )}
-        </View>
-        <Text style={styles.name}>
-          {user.firstName} {user.lastName}
-        </Text>
-        {isCurrentUser && <Text style={styles.youBadge}>(You)</Text>}
+      <LargeTitleHeader title="User" />
 
-        <View
-          style={[
-            styles.roleBadge,
-            user.role === 'ADMIN' ? styles.adminBadge : styles.userBadge,
-          ]}
-        >
-          <Icon
-            name={user.role === 'ADMIN' ? 'shield-check' : 'account'}
-            size={16}
-            color={user.role === 'ADMIN' ? '#059669' : '#2563eb'}
-          />
+      <GroupedList title="Profile">
+        <ListRow
+          title={`${user.firstName} ${user.lastName}${isCurrentUser ? ' (You)' : ''}`}
+          subtitle={`${user.email} • @${user.username}`}
+          left={
+            <View style={styles.avatarSmall}>
+              <Text style={styles.avatarTextSmall}>
+                {user.firstName?.[0]}
+                {user.lastName?.[0]}
+              </Text>
+            </View>
+          }
+          right={
+            !isCurrentUser ? (
+              <Icon name="dots-horizontal" size={20} color="#6B7280" onPress={() => setShowActions(true)} />
+            ) : null
+          }
+          showChevron={false}
+          isLast
+        />
+      </GroupedList>
+
+      {user._count ? (
+        <GroupedList title="Activity">
+          <ListRow title="Contacts" subtitle={`${user._count.contacts}`} showChevron={false} isLast={false} />
+          <ListRow title="Groups" subtitle={`${user._count.tripGroups}`} showChevron={false} isLast={false} />
+          <ListRow title="Messages" subtitle={`${user._count.messages}`} showChevron={false} isLast={false} />
+          <ListRow title="Memberships" subtitle={`${user._count.groupMembers}`} showChevron={false} isLast />
+        </GroupedList>
+      ) : null}
+
+      <GroupedList title="Account">
+        <ListRow
+          title="Role"
+          subtitle={user.role}
+          showChevron={false}
+          isLast={false}
+        />
+        <ListRow
+          title="Joined"
+          subtitle={new Date(user.createdAt).toLocaleDateString()}
+          showChevron={false}
+          isLast={false}
+        />
+        <ListRow
+          title="Last updated"
+          subtitle={new Date(user.updatedAt).toLocaleDateString()}
+          showChevron={false}
+          isLast
+        />
+      </GroupedList>
+
+      <ActionSheet
+        visible={showActions}
+        onClose={() => setShowActions(false)}
+        title={`${user.firstName} ${user.lastName}`}
+      >
+        <View>
           <Text
-            style={[
-              styles.roleText,
-              user.role === 'ADMIN' ? styles.adminText : styles.userText,
-            ]}
+            style={styles.sheetItem}
+            onPress={() => {
+              setShowActions(false);
+              handleToggleRole();
+            }}
           >
-            {user.role}
+            {user.role === 'ADMIN' ? 'Demote to User' : 'Promote to Admin'}
+          </Text>
+          <Text
+            style={[styles.sheetItem, styles.destructive]}
+            onPress={() => {
+              setShowActions(false);
+              setShowDeleteConfirm(true);
+            }}
+          >
+            Delete
           </Text>
         </View>
-      </View>
+      </ActionSheet>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Contact Information</Text>
-        <View style={styles.infoRow}>
-          <Icon name="email" size={20} color="#6b7280" />
-          <Text style={styles.infoText}>{user.email}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Icon name="at" size={20} color="#6b7280" />
-          <Text style={styles.infoText}>@{user.username}</Text>
-        </View>
-      </View>
-
-      {user._count && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Activity</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Icon name="account-group" size={24} color={theme.colors.primary} />
-              <Text style={styles.statValue}>{user._count.contacts}</Text>
-              <Text style={styles.statLabel}>Contacts</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Icon name="airplane" size={24} color={theme.colors.primary} />
-              <Text style={styles.statValue}>{user._count.tripGroups}</Text>
-              <Text style={styles.statLabel}>Groups</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Icon name="message" size={24} color={theme.colors.primary} />
-              <Text style={styles.statValue}>{user._count.messages}</Text>
-              <Text style={styles.statLabel}>Messages</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Icon name="account-multiple" size={24} color={theme.colors.primary} />
-              <Text style={styles.statValue}>{user._count.groupMembers}</Text>
-              <Text style={styles.statLabel}>Memberships</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Details</Text>
-        <View style={styles.infoRow}>
-          <Icon name="calendar" size={20} color="#6b7280" />
-          <Text style={styles.infoText}>
-            Joined: {new Date(user.createdAt).toLocaleDateString()}
+      <ActionSheet visible={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete user?">
+        <View>
+          <Text style={styles.sheetHelp}>
+            This action cannot be undone and may delete associated data.
+          </Text>
+          <Text
+            style={[styles.sheetItem, styles.destructive]}
+            onPress={() => {
+              setShowDeleteConfirm(false);
+              handleDeleteUser();
+            }}
+          >
+            Confirm delete
           </Text>
         </View>
-        <View style={styles.infoRow}>
-          <Icon name="update" size={20} color="#6b7280" />
-          <Text style={styles.infoText}>
-            Last Updated: {new Date(user.updatedAt).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-
-      {!isCurrentUser && (
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              user.role === 'ADMIN' ? styles.demoteButton : styles.promoteButton,
-            ]}
-            onPress={handleToggleRole}
-          >
-            <Icon
-              name={user.role === 'ADMIN' ? 'account' : 'shield-check'}
-              size={20}
-              color="#fff"
-            />
-            <Text style={styles.actionButtonText}>
-              {user.role === 'ADMIN' ? 'Demote to User' : 'Promote to Admin'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDeleteUser}
-          >
-            <Icon name="delete" size={20} color="#fff" />
-            <Text style={styles.actionButtonText}>Delete User</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      </ActionSheet>
     </ScrollView>
   );
 };
@@ -253,140 +195,42 @@ const UserDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#F2F2F7',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    backgroundColor: '#fff',
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0F2FE',
     alignItems: 'center',
-    padding: 24,
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#e0f2fe',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
   },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: 'bold',
+  avatarTextSmall: {
+    fontSize: 14,
+    fontWeight: '700',
     color: theme.colors.primary,
   },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  sheetItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 17,
     color: '#111827',
-    marginBottom: 4,
   },
-  youBadge: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 8,
+  destructive: {
+    color: '#EF4444',
+    fontWeight: '700',
   },
-  roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-    marginTop: 8,
-  },
-  adminBadge: {
-    backgroundColor: '#d1fae5',
-  },
-  userBadge: {
-    backgroundColor: '#dbeafe',
-  },
-  roleText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  adminText: {
-    color: '#059669',
-  },
-  userText: {
-    color: '#2563eb',
-  },
-  section: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#4b5563',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  statItem: {
-    flex: 1,
-    minWidth: 100,
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  actions: {
-    padding: 16,
-    gap: 12,
-    marginBottom: 24,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 8,
-    gap: 8,
-  },
-  promoteButton: {
-    backgroundColor: '#059669',
-  },
-  demoteButton: {
-    backgroundColor: '#f59e0b',
-  },
-  deleteButton: {
-    backgroundColor: '#ef4444',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  sheetHelp: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    fontSize: 13,
+    color: '#6B7280',
   },
 });
 

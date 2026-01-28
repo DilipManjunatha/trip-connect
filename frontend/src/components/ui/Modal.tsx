@@ -6,6 +6,7 @@ import { clsx } from 'clsx';
 export interface ModalProps {
   open: boolean;
   onClose: () => void;
+  onAfterClose?: () => void;
   title?: string | React.ReactNode;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -24,6 +25,7 @@ const sizeClasses = {
 const Modal: React.FC<ModalProps> = ({
   open,
   onClose,
+  onAfterClose,
   title,
   children,
   size = 'md',
@@ -31,7 +33,7 @@ const Modal: React.FC<ModalProps> = ({
   className,
 }) => {
   return (
-    <Transition appear show={open} as={Fragment}>
+    <Transition appear show={open} as={Fragment} afterLeave={onAfterClose}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         <Transition.Child
           as={Fragment}

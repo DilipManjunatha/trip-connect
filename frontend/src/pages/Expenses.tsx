@@ -101,16 +101,6 @@ const Expenses: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingExpense(null);
-    setFormData({
-      title: '',
-      description: '',
-      amount: '',
-      category: 'Other',
-      paidBy: '',
-      splitType: 'EQUAL',
-      date: new Date().toISOString().split('T')[0],
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -382,6 +372,18 @@ const Expenses: React.FC = () => {
       <Modal
         open={showModal}
         onClose={handleCloseModal}
+        onAfterClose={() => {
+          setEditingExpense(null);
+          setFormData({
+            title: '',
+            description: '',
+            amount: '',
+            category: 'Other',
+            paidBy: '',
+            splitType: 'EQUAL',
+            date: new Date().toISOString().split('T')[0],
+          });
+        }}
         title={editingExpense ? 'Edit Expense' : 'Add New Expense'}
         size="md"
       >

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Card, Text, Chip, FAB, Searchbar } from 'react-native-paper';
+import { Text, Chip, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,6 +11,7 @@ import { theme } from '../../theme';
 import DelightfulError from '../../components/DelightfulError';
 import { useAuth } from '../../context/AuthContext';
 import { isAdmin } from '../../utils/roles';
+import { GroupedList, LargeTitleHeader, ListRow, SearchField } from '../../components/apple';
 
 type GroupsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Groups'>;
 
@@ -46,81 +47,10 @@ const GroupsScreen: React.FC = () => {
       group.destination?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderGroupCard = ({ item: group }: { item: TripGroup }) => (
-    <Card
-      style={styles.card}
-      onPress={() => navigation.navigate('GroupDetail', { groupId: group.id })}
-    >
-      <Card.Content>
-        <View style={styles.cardHeader}>
-          <View style={styles.iconContainer}>
-            <Icon name="airplane" size={24} color={theme.colors.primary} />
-          </View>
-          <View style={styles.headerContent}>
-            <Text style={styles.groupName}>{group.name}</Text>
-            <Chip
-              style={[styles.statusChip, { backgroundColor: statusColors[group.status] }]}
-              textStyle={styles.statusText}
-            >
-              {group.status}
-            </Chip>
-          </View>
-        </View>
-
-        {group.destination && (
-          <View style={styles.infoRow}>
-            <Icon name="map-marker" size={16} color="#6B7280" />
-            <Text style={styles.infoText}>{group.destination}</Text>
-          </View>
-        )}
-
-        {group.startDate && (
-          <View style={styles.infoRow}>
-            <Icon name="calendar" size={16} color="#6B7280" />
-            <Text style={styles.infoText}>
-              {new Date(group.startDate).toLocaleDateString()}
-              {group.endDate && ` - ${new Date(group.endDate).toLocaleDateString()}`}
-            </Text>
-          </View>
-        )}
-
-        {group.budget && (
-          <View style={styles.infoRow}>
-            <Icon name="currency-usd" size={16} color="#10B981" />
-            <Text style={[styles.infoText, { color: '#10B981', fontWeight: '600' }]}>
-              Budget: ${group.budget.toFixed(2)}
-            </Text>
-          </View>
-        )}
-
-        {group.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {group.description}
-          </Text>
-        )}
-
-        <View style={styles.footer}>
-          <View style={styles.stat}>
-            <Icon name="account-group" size={16} color="#6B7280" />
-            <Text style={styles.statText}>{group._count?.members || 0} members</Text>
-          </View>
-          <View style={styles.stat}>
-            <Icon name="cash" size={16} color="#6B7280" />
-            <Text style={styles.statText}>{group._count?.expenses || 0} expenses</Text>
-          </View>
-        </View>
-      </Card.Content>
-    </Card>
-  );
-
   return (
     <View style={styles.container}>
-      <Searchbar
-        placeholder="Search trip groups..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchBar}
-      />
+      <LargeTitleHeader title="Trip Groups" />
+      <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search groups" />
 
       {filteredGroups.length === 0 && !isLoading ? (
         <View style={styles.emptyState}>
@@ -129,15 +59,38 @@ const GroupsScreen: React.FC = () => {
           <Text style={styles.emptySubtext}>Create your first trip group to get started</Text>
         </View>
       ) : (
-        <FlatList
-          data={filteredGroups}
-          renderItem={renderGroupCard}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[theme.colors.primary]} />
-          }
-        />
+        <GroupedList>
+          <FlatList
+            data={filteredGroups}
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[theme.colors.primary]} />
+            }
+            renderItem={({ item: group, index }) => (
+              <ListRow
+                title={group.name}
+                subtitle={group.destination || (group.startDate ? new Date(group.startDate).toLocaleDateString() : undefined)}
+                left={
+                  <View style={styles.iconContainer}>
+                    <Icon name="airplane" size={22} color={theme.colors.primary} />
+                  </View>
+                }
+                right={
+                  <Chip
+                    style={[styles.statusChip, { backgroundColor: statusColors[group.status] }]}
+                    textStyle={styles.statusText}
+                  >
+                    {group.status}
+                  </Chip>
+                }
+                onPress={() => navigation.navigate('GroupDetail', { groupId: group.id })}
+                showChevron
+                isLast={index === filteredGroups.length - 1}
+              />
+            )}
+            contentContainerStyle={filteredGroups.length === 0 ? styles.emptyList : undefined}
+          />
+        </GroupedList>
       )}
 
       {isAdmin(user) && (
@@ -155,24 +108,10 @@ const GroupsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F2F2F7',
   },
-  searchBar: {
-    margin: 16,
-    elevation: 2,
-  },
-  listContent: {
-    padding: 16,
+  emptyList: {
     paddingBottom: 80,
-  },
-  card: {
-    marginBottom: 16,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
   },
   iconContainer: {
     width: 48,
@@ -181,16 +120,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  groupName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
   },
   statusChip: {
     alignSelf: 'flex-start',
@@ -200,39 +129,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#fff',
     fontWeight: '600',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginLeft: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    marginTop: 8,
-  },
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statText: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginLeft: 4,
   },
   emptyState: {
     flex: 1,

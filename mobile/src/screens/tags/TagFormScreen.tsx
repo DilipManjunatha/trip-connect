@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Card, Text } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Card, Text, TextInput } from 'react-native-paper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { apiService } from '../../services/api';
 import { Tag, RootStackParamList } from '../../types';
 import InfoTooltip from '../../components/InfoTooltip';
+import { LargeTitleHeader } from '../../components/apple';
 
 type TagFormScreenRouteProp = RouteProp<RootStackParamList, 'TagForm'>;
 type TagFormScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TagForm'>;
@@ -79,6 +80,7 @@ const TagFormScreen: React.FC = () => {
       style={styles.container}
     >
       <ScrollView style={styles.scrollView}>
+        <LargeTitleHeader title={isEditing ? 'Edit Tag' : 'New Tag'} />
         <View style={styles.content}>
           {/* Examples Section for new tags */}
           {!isEditing && (
@@ -179,6 +181,7 @@ const TagFormScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F2F2F7',
   },
   scrollView: {
     flex: 1,
@@ -197,7 +200,7 @@ const styles = StyleSheet.create({
   },
   examplesCard: {
     marginBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
   },
   examplesTitle: {
     marginBottom: 8,

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Contact, Tag } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
-import { Button, Input, Modal, FormField } from '../components/ui';
+import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
 
 const Contacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -23,6 +23,8 @@ const Contacts: React.FC = () => {
     tagIds: [] as string[],
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     fetchContacts();
@@ -98,16 +100,6 @@ const Contacts: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setEditingContact(null);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      notes: '',
-      tagIds: [],
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,128 +190,116 @@ const Contacts: React.FC = () => {
     return colors[Math.abs(hash) % colors.length];
   };
 
+  const openActionsFor = (contact: Contact) => {
+    setSelectedContact(contact);
+    setShowActions(true);
+  };
+
+  const closeActions = () => {
+    setShowActions(false);
+    // keep selectedContact for a moment; not necessary to clear immediately
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Contacts</h1>
-        <Button
-          onClick={() => handleOpenModal()}
-          leftIcon={<PlusIcon className="h-5 w-5" />}
-          className="w-full sm:w-auto"
-        >
-          Add Contact
-        </Button>
-      </div>
+    <div className="space-y-4">
+      <LargeTitleHeader
+        title="Contacts"
+        action={
+          <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+            Add
+          </Button>
+        }
+      />
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-lg shadow">
-        <Input
-          type="text"
-          placeholder="Search contacts by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border-0 shadow-none"
-        />
-      </div>
+      <SearchField
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search by name or email"
+      />
 
-      {/* Contacts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredContacts.length > 0 ? (
-          filteredContacts.map((contact) => (
-            <div key={contact.id} className="bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden">
-              <div className="p-6">
-                {/* Avatar - always show either image or initials */}
-                <div className="flex items-center mb-4">
-                  {contact.avatar ? (
-                    <img src={contact.avatar} alt={contact.firstName} className="w-16 h-16 rounded-full" />
-                  ) : (
-                    <div 
-                      className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-semibold"
-                      style={{ backgroundColor: getAvatarColor(`${contact.firstName} ${contact.lastName}`) }}
-                    >
-                      {contact.firstName[0]}{contact.lastName[0]}
+      {filteredContacts.length > 0 ? (
+        <GroupedList>
+          {filteredContacts.map((contact, idx) => {
+            const fullName = `${contact.firstName} ${contact.lastName}`.trim();
+            const subtitle = contact.email || contact.phone || '';
+            const tagCount = contact.tags?.length || 0;
+            return (
+              <div key={contact.id}>
+                <ListRow
+                  title={fullName}
+                  subtitle={subtitle}
+                  leading={
+                    contact.avatar ? (
+                      <img
+                        src={contact.avatar}
+                        alt={contact.firstName}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+                        style={{ backgroundColor: getAvatarColor(fullName) }}
+                        aria-hidden="true"
+                      >
+                        {contact.firstName?.[0]}
+                        {contact.lastName?.[0]}
+                      </div>
+                    )
+                  }
+                  trailing={
+                    <div className="flex items-center gap-2">
+                      {tagCount > 0 ? (
+                        <span className="text-xs text-gray-500">{tagCount} tags</span>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openActionsFor(contact);
+                        }}
+                        className="rounded-full p-2 text-gray-500 hover:bg-gray-100 active:bg-gray-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        aria-label={`Actions for ${fullName}`}
+                      >
+                        <EllipsisHorizontalIcon className="h-5 w-5" />
+                      </button>
                     </div>
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {contact.firstName} {contact.lastName}
-                </h3>
-                {contact.email && (
-                  <p className="text-sm text-gray-500 mt-1">{contact.email}</p>
-                )}
-                {contact.phone && (
-                  <p className="text-sm text-gray-500">{contact.phone}</p>
-                )}
-                {contact.address && (
-                  <p className="text-sm text-gray-500 mt-2">{contact.address}</p>
-                )}
-                {contact.notes && (
-                  <p className="text-sm text-gray-600 mt-3 italic">{contact.notes}</p>
-                )}
-                
-                {contact.tags && contact.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {contact.tags.map((contactTag: any) => {
-                      const tag = contactTag.tag || contactTag; // Handle both nested structure and direct tag object
-                      return (
-                        <span 
-                          key={tag.id} 
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                          style={{ 
-                            backgroundColor: `${tag.color}20`, // 20% opacity
-                            color: tag.color 
-                          }}
-                        >
-                          {tag.name}
-                          {tag.value && `: ${tag.value}`}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    onClick={() => handleOpenModal(contact)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    leftIcon={<PencilSquareIcon className="h-4 w-4" />}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(contact.id)}
-                    variant="danger"
-                    size="sm"
-                    className="flex-1"
-                    leftIcon={<TrashIcon className="h-4 w-4" />}
-                  >
-                    Delete
-                  </Button>
-                </div>
+                  }
+                  onClick={() => handleOpenModal(contact)}
+                  showChevron={false}
+                />
+                {idx !== filteredContacts.length - 1 ? (
+                  <div className="mx-4 h-px bg-gray-100" />
+                ) : null}
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-500 text-lg">No contacts found</p>
-            <Button
-              onClick={() => handleOpenModal()}
-              variant="ghost"
-              className="mt-4"
-            >
-              Create your first contact
-            </Button>
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </GroupedList>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-base">No contacts found</p>
+          <Button onClick={() => handleOpenModal()} variant="ghost" className="mt-4">
+            Create your first contact
+          </Button>
+        </div>
+      )}
 
       {/* Modal */}
       <Modal
         open={showModal}
         onClose={handleCloseModal}
+        onAfterClose={() => {
+          setEditingContact(null);
+          setFormData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            address: '',
+            notes: '',
+            tagIds: [],
+          });
+        }}
         title={
           editingContact ? (
             <div className="flex items-center gap-3">
@@ -448,6 +428,44 @@ const Contacts: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ActionSheet
+        open={showActions}
+        onClose={closeActions}
+        title={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : 'Actions'}
+      >
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedContact) return;
+              closeActions();
+              handleOpenModal(selectedContact);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <PencilSquareIcon className="h-5 w-5 text-gray-500" />
+              Edit
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedContact) return;
+              const id = selectedContact.id;
+              closeActions();
+              handleDelete(id);
+            }}
+            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <TrashIcon className="h-5 w-5 text-error-500" />
+              Delete
+            </span>
+          </button>
+        </div>
+      </ActionSheet>
     </div>
   );
 };
