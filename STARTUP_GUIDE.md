@@ -195,8 +195,8 @@ WS_URL=http://10.0.2.2:5000
 
 **For Physical Device (replace with your computer's IP):**
 ```env
-API_URL=http://192.168.1.100:5000/api
-WS_URL=http://192.168.1.100:5000
+API_URL=http://192.168.0.122:5000/api
+WS_URL=http://192.168.0.122:5000
 ```
 
 **To find your computer's IP:**
