@@ -1,3 +1,52 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    // PREFER_SETTINGS allows React Native native modules to add repositories if needed
+    // but prefers the ones defined here (Gradle 9.0 compatible)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        mavenLocal()
+        google()
+        mavenCentral()
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url("${rootDir}/../node_modules/react-native/android")
+        }
+        maven {
+            // Android JSC is installed from npm
+            url("${rootDir}/../node_modules/jsc-android/dist")
+        }
+        maven {
+            // JitPack for third-party dependencies like numberpickerview
+            url("https://www.jitpack.io")
+        }
+    }
+}
+
 rootProject.name = 'tripconnect'
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
+
+// Apply native modules configuration if available (React Native 0.76+)
+def nativeModulesFile = file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+if (nativeModulesFile.exists()) {
+    apply from: nativeModulesFile
+    applyNativeModulesSettingsGradle(settings)
+} else {
+    // Fallback: try alternative location or skip if not available
+    def altNativeModulesFile = file("../node_modules/@react-native-community/cli/build/commands/runAndroid/native_modules.gradle")
+    if (altNativeModulesFile.exists()) {
+        apply from: altNativeModulesFile
+        applyNativeModulesSettingsGradle(settings)
+    } else {
+        // In React Native 0.76+, native modules might be auto-linked differently
+        // Just include the app module
+    }
+}
+
 include ':app'

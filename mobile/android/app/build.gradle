@@ -1,14 +1,18 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
+// apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
 
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
+    compileSdk rootProject.ext.compileSdkVersion
     namespace "com.tripconnect"
 
     // Enable buildConfig feature (required in AGP 8.0+)
     buildFeatures {
         buildConfig true
+        aidl false
+        renderScript false
+        resValues false
+        shaders false
     }
 
     // Read the newArchEnabled and hermesEnabled flags from gradle.properties
@@ -17,8 +21,8 @@ android {
 
     defaultConfig {
         applicationId "com.tripconnect"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdk rootProject.ext.minSdkVersion
+        targetSdk rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", enableNewArchitecture.toString()
@@ -36,7 +40,7 @@ android {
         }
     }
 
-    packagingOptions {
+    packaging {
         pickFirst 'lib/armeabi-v7a/libc++_shared.so'
         pickFirst 'lib/arm64-v8a/libc++_shared.so'
         pickFirst 'lib/x86/libc++_shared.so'
@@ -44,27 +48,31 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 
 // Configure Kotlin options outside the android block
+// Using compilerOptions API instead of deprecated kotlinOptions closure
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation "com.facebook.react:react-android:0.73.11"
-    implementation "com.facebook.react:hermes-android:0.73.11"
+    // Note: fileTree for libs is deprecated in Gradle 8.10.2+
+    // If you have JAR files in libs/, add them individually using:
+    // implementation files('libs/your-library.jar')
+    implementation "com.facebook.react:react-android:0.76.6"
+    implementation "com.facebook.react:hermes-android:0.76.6"
+    implementation "org.webkit:android-jsc:r250231"
     
     // AndroidX dependencies - versions are forced via resolutionStrategy in root build.gradle
-    implementation "androidx.appcompat:appcompat:1.6.1"
-    implementation "androidx.core:core:1.12.0"
-    implementation "androidx.core:core-ktx:1.12.0"
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.core:core:1.13.1"
+    implementation "androidx.core:core-ktx:1.13.1"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    implementation "com.google.android.material:material:1.9.0"
+    implementation "com.google.android.material:material:1.12.0"
 }

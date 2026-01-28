@@ -2,14 +2,14 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Card, Text, Button, Avatar, FAB } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { apiService } from '../../services/api';
-import { RootStackParamList } from '../../types';
+import { apiService } from '../services/api';
+import { RootStackParamList } from '../types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import DelightfulError from '../../components/DelightfulError';
-import { isAdmin } from '../../utils/roles';
+import DelightfulError from '../components/DelightfulError';
+import { isAdmin } from '../utils/roles';
 
 type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
