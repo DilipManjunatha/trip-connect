@@ -37,10 +37,66 @@ for (const envVar of requiredEnvVars) {
 const app = express();
 const server = createServer(app);
 
-// Socket.io configuration with improved CORS
+// CORS origin validation function
+const getAllowedOrigins = (): string[] => {
+  const origins: string[] = [];
+  
+  // Add localhost origins (common development ports)
+  origins.push('http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173');
+  
+  // Add origins from FRONTEND_URL (supports comma-separated list)
+  if (process.env.FRONTEND_URL) {
+    const frontendUrls = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+    origins.push(...frontendUrls);
+  }
+  
+  // In development, allow common network IP patterns
+  if (process.env.NODE_ENV === 'development') {
+    // Allow any local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    // This will be handled by the origin function below
+  }
+  
+  return origins;
+};
+
+// CORS origin validation function
+const corsOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  // Allow requests with no origin (like mobile apps, Postman, etc.)
+  if (!origin) {
+    return callback(null, true);
+  }
+  
+  const allowedOrigins = getAllowedOrigins();
+  
+  // Check if origin is in allowed list
+  if (allowedOrigins.includes(origin)) {
+    return callback(null, true);
+  }
+  
+  // In development, allow local network IPs (for mobile web access)
+  if (process.env.NODE_ENV === 'development') {
+    // Allow localhost variants
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    
+    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    const localNetworkPattern = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}):\d+$/;
+    if (localNetworkPattern.test(origin)) {
+      return callback(null, true);
+    }
+  }
+  
+  // Reject origin
+  callback(new Error('Not allowed by CORS'));
+};
+
+// Socket.io CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      corsOrigin(origin, callback);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Authorization', 'Content-Type']
@@ -50,10 +106,17 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  // Adjust helmet for development to allow local network access
+  crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
+}));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: (origin, callback) => {
+    corsOrigin(origin, callback);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
