@@ -69,86 +69,142 @@ const DashboardScreen: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        <Card style={styles.profileCard}>
-          <Card.Content style={styles.profileContent}>
-            <Avatar.Text
-              size={64}
-              label={`${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`}
-            />
-            <View style={styles.profileInfo}>
-              <Text variant="titleLarge">
-                {user?.firstName} {user?.lastName}
-              </Text>
-              <Text variant="bodyMedium" style={styles.email}>
-                {user?.email}
-              </Text>
-            </View>
-            <Button mode="outlined" onPress={logout} compact>
-              Logout
-            </Button>
-          </Card.Content>
-        </Card>
-
-        <View style={styles.statsContainer}>
-          {isAdmin(user) && (
-            <Card
-              style={styles.statCard}
-              onPress={() => navigation.navigate('ContactsTab' as any)}
-            >
-              <Card.Content style={styles.statContent}>
-                <Icon name="account-group" size={32} color="#3B82F6" />
-                <Text variant="headlineMedium" style={styles.statNumber}>
-                  {contacts?.length || 0}
-                </Text>
-                <Text variant="bodyMedium">Contacts</Text>
-              </Card.Content>
-            </Card>
-          )}
-
-          <Card
-            style={styles.statCard}
-            onPress={() => navigation.navigate('GroupsTab' as any)}
-          >
-            <Card.Content style={styles.statContent}>
-              <Icon name="airplane" size={32} color="#8B5CF6" />
-              <Text variant="headlineMedium" style={styles.statNumber}>
-                {groups?.length || 0}
-              </Text>
-              <Text variant="bodyMedium">Trip Groups</Text>
-            </Card.Content>
-          </Card>
+        {/* Welcome Header - Compact */}
+        <View style={styles.header}>
+          <Text style={styles.welcomeText}>
+            Welcome back, {user?.firstName}!
+          </Text>
         </View>
 
-        {isAdmin(user) && (
-          <View style={styles.statsContainer}>
+        {/* Quick Actions - Top Priority */}
+        <View style={styles.quickActionsSection}>
+          <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
+          <View style={styles.quickActionsGrid}>
+            {isAdmin(user) && (
+              <>
+                <Card
+                  style={styles.quickActionCard}
+                  onPress={() => navigation.navigate('ContactsTab' as any)}
+                >
+                  <Card.Content style={styles.quickActionContent}>
+                    <View style={[styles.quickActionIcon, { backgroundColor: '#3B82F6' }]}>
+                      <Icon name="account-plus" size={24} color="#fff" />
+                    </View>
+                    <Text style={styles.quickActionLabel}>Add Contact</Text>
+                  </Card.Content>
+                </Card>
+
+                <Card
+                  style={styles.quickActionCard}
+                  onPress={() => navigation.navigate('TagsTab' as any)}
+                >
+                  <Card.Content style={styles.quickActionContent}>
+                    <View style={[styles.quickActionIcon, { backgroundColor: '#10B981' }]}>
+                      <Icon name="tag-plus" size={24} color="#fff" />
+                    </View>
+                    <Text style={styles.quickActionLabel}>Create Tag</Text>
+                  </Card.Content>
+                </Card>
+              </>
+            )}
+
             <Card
-              style={styles.statCard}
-              onPress={() => navigation.navigate('ListsTab' as any)}
+              style={styles.quickActionCard}
+              onPress={() => navigation.navigate('GroupsTab' as any)}
             >
-              <Card.Content style={styles.statContent}>
-                <Icon name="format-list-bulleted" size={32} color="#10B981" />
-                <Text variant="headlineMedium" style={styles.statNumber}>
-                  {lists?.length || 0}
+              <Card.Content style={styles.quickActionContent}>
+                <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF6' }]}>
+                  <Icon name="airplane-plus" size={24} color="#fff" />
+                </View>
+                <Text style={styles.quickActionLabel}>
+                  {isAdmin(user) ? 'Create Group' : 'View Groups'}
                 </Text>
-                <Text variant="bodyMedium">Lists</Text>
               </Card.Content>
             </Card>
 
-            <Card style={styles.statCard}>
-              <Card.Content style={styles.statContent}>
-                <Icon name="tag" size={32} color="#F59E0B" />
-                <Text variant="headlineMedium" style={styles.statNumber}>
-                  {contacts?.reduce((acc, contact) => acc + (contact.tags?.length || 0), 0) || 0}
-                </Text>
-                <Text variant="bodyMedium">Tags Used</Text>
-              </Card.Content>
-            </Card>
+            {!isAdmin(user) && (
+              <Card
+                style={styles.quickActionCard}
+                onPress={() => navigation.navigate('Messages' as any)}
+              >
+                <Card.Content style={styles.quickActionContent}>
+                  <View style={[styles.quickActionIcon, { backgroundColor: '#6366F1' }]}>
+                    <Icon name="message" size={24} color="#fff" />
+                  </View>
+                  <Text style={styles.quickActionLabel}>Messages</Text>
+                </Card.Content>
+              </Card>
+            )}
           </View>
-        )}
+        </View>
 
+        {/* Stats - Compact horizontal scroll */}
+        <View style={styles.statsSection}>
+          <Text style={styles.sectionTitle}>SUMMARY</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScroll}>
+            {isAdmin(user) && (
+              <Card
+                style={styles.compactStatCard}
+                onPress={() => navigation.navigate('ContactsTab' as any)}
+              >
+                <Card.Content style={styles.compactStatContent}>
+                  <View style={[styles.compactStatIcon, { backgroundColor: '#3B82F6' }]}>
+                    <Icon name="account-group" size={20} color="#fff" />
+                  </View>
+                  <Text style={styles.compactStatNumber}>{contacts?.length || 0}</Text>
+                  <Text style={styles.compactStatLabel}>Contacts</Text>
+                </Card.Content>
+              </Card>
+            )}
+
+            <Card
+              style={styles.compactStatCard}
+              onPress={() => navigation.navigate('GroupsTab' as any)}
+            >
+              <Card.Content style={styles.compactStatContent}>
+                <View style={[styles.compactStatIcon, { backgroundColor: '#8B5CF6' }]}>
+                  <Icon name="airplane" size={20} color="#fff" />
+                </View>
+                <Text style={styles.compactStatNumber}>{groups?.length || 0}</Text>
+                <Text style={styles.compactStatLabel}>Groups</Text>
+              </Card.Content>
+            </Card>
+
+            {isAdmin(user) && (
+              <>
+                <Card
+                  style={styles.compactStatCard}
+                  onPress={() => navigation.navigate('ListsTab' as any)}
+                >
+                  <Card.Content style={styles.compactStatContent}>
+                    <View style={[styles.compactStatIcon, { backgroundColor: '#10B981' }]}>
+                      <Icon name="format-list-bulleted" size={20} color="#fff" />
+                    </View>
+                    <Text style={styles.compactStatNumber}>{lists?.length || 0}</Text>
+                    <Text style={styles.compactStatLabel}>Lists</Text>
+                  </Card.Content>
+                </Card>
+
+                <Card style={styles.compactStatCard}>
+                  <Card.Content style={styles.compactStatContent}>
+                    <View style={[styles.compactStatIcon, { backgroundColor: '#F59E0B' }]}>
+                      <Icon name="tag" size={20} color="#fff" />
+                    </View>
+                    <Text style={styles.compactStatNumber}>
+                      {contacts?.reduce((acc, contact) => acc + (contact.tags?.length || 0), 0) || 0}
+                    </Text>
+                    <Text style={styles.compactStatLabel}>Tags</Text>
+                  </Card.Content>
+                </Card>
+              </>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Recent Groups - Compact */}
         {groups && groups.length > 0 && (
           <Card style={styles.recentCard}>
-            <Card.Title title="Recent Trip Groups" />
+            <Card.Title title="Recent Trip Groups" titleStyle={styles.cardTitle} />
             <Card.Content>
               {groups.slice(0, 3).map((group) => (
                 <Card
@@ -183,48 +239,119 @@ const DashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F2F2F7',
   },
   scrollView: {
     flex: 1,
   },
-  profileCard: {
-    margin: 16,
-  },
-  profileContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  email: {
-    color: '#6B7280',
-  },
-  statsContainer: {
-    flexDirection: 'row',
+  header: {
     paddingHorizontal: 16,
-    gap: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  welcomeText: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  quickActionsSection: {
+    marginTop: 8,
+    marginHorizontal: 16,
     marginBottom: 16,
   },
-  statCard: {
-    flex: 1,
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  statContent: {
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickActionCard: {
+    flex: 1,
+    minWidth: '47%',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  quickActionContent: {
     alignItems: 'center',
     paddingVertical: 16,
+    paddingHorizontal: 12,
   },
-  statNumber: {
-    marginTop: 8,
-    fontWeight: 'bold',
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  quickActionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  statsSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  statsScroll: {
+    paddingRight: 16,
+    gap: 8,
+  },
+  compactStatCard: {
+    width: 100,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    marginRight: 8,
+  },
+  compactStatContent: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  compactStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  compactStatNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  compactStatLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+    textAlign: 'center',
   },
   recentCard: {
-    margin: 16,
-    marginTop: 0,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   groupCard: {
     marginBottom: 8,
+    borderRadius: 12,
   },
   destination: {
     color: '#6B7280',
