@@ -5,6 +5,7 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, CurrencyDollarIcon, C
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
+import { Button, Input, Modal, FormField, Select } from '../components/ui';
 
 interface Expense {
   id: string;
@@ -179,23 +180,25 @@ const Expenses: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <button
+          <Button
             onClick={() => navigate('/groups')}
-            className="text-blue-600 hover:text-blue-700 text-sm mb-2"
+            variant="ghost"
+            size="sm"
+            className="mb-2"
           >
             ← Back to Groups
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">Expenses</h1>
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Expenses</h1>
         </div>
-        <button
+        <Button
           onClick={() => handleOpenModal()}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          leftIcon={<PlusIcon className="h-5 w-5" />}
+          className="w-full sm:w-auto"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
           Add Expense
-        </button>
+        </Button>
       </div>
 
       {/* Total Summary Card */}
@@ -212,215 +215,264 @@ const Expenses: React.FC = () => {
 
       {/* Expenses List */}
       {expenses.length > 0 ? (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Expense
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Paid By
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Split
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {expenses.map((expense) => (
-                <tr key={expense.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{expense.title}</div>
-                      {expense.description && (
-                        <div className="text-sm text-gray-500">{expense.description}</div>
-                      )}
+        <>
+          {/* Mobile Card View */}
+          <div className="block md:hidden space-y-4">
+            {expenses.map((expense) => (
+              <div key={expense.id} className="bg-white rounded-lg shadow p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900">{expense.title}</h3>
+                    {expense.description && (
+                      <p className="text-sm text-gray-500 mt-1">{expense.description}</p>
+                    )}
+                  </div>
+                  <div className="text-lg font-bold text-green-600 ml-4">
+                    ${expense.amount.toFixed(2)}
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center text-gray-600">
+                    <TagIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>{expense.category}</span>
+                  </div>
+                  {expense.paidBy && (
+                    <div className="flex items-center text-gray-600">
+                      <span className="font-medium mr-2">Paid by:</span>
+                      <span>{expense.paidBy}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <TagIcon className="h-4 w-4 mr-1 text-gray-400" />
-                      {expense.category}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-green-600">
-                      ${expense.amount.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {expense.paidBy || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
-                      {new Date(expense.date).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  )}
+                  <div className="flex items-center text-gray-600">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>{new Date(expense.date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                       {expense.splitType}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleOpenModal(expense)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                    >
-                      <PencilSquareIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(expense.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </td>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleOpenModal(expense)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-900 min-h-[44px] min-w-[44px]"
+                        title="Edit"
+                      >
+                        <PencilSquareIcon className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(expense.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-900 min-h-[44px] min-w-[44px]"
+                        title="Delete"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Expense
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Paid By
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Split
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {expenses.map((expense) => (
+                  <tr key={expense.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{expense.title}</div>
+                        {expense.description && (
+                          <div className="text-sm text-gray-500">{expense.description}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-900">
+                        <TagIcon className="h-4 w-4 mr-1 text-gray-400" />
+                        {expense.category}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-green-600">
+                        ${expense.amount.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {expense.paidBy || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
+                        {new Date(expense.date).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {expense.splitType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Button
+                        onClick={() => handleOpenModal(expense)}
+                        variant="ghost"
+                        size="sm"
+                        className="mr-3 text-blue-600 hover:text-blue-900"
+                      >
+                        <PencilSquareIcon className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(expense.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <div className="text-center py-12 bg-white rounded-lg shadow">
           <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
           <p className="text-gray-500 text-lg mt-4">No expenses recorded yet</p>
-          <button
+          <Button
             onClick={() => handleOpenModal()}
-            className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+            variant="ghost"
+            className="mt-4"
           >
             Add your first expense
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {editingExpense ? 'Edit Expense' : 'Add New Expense'}
-                </h2>
-                <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Hotel Accommodation"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="Accommodation">Accommodation</option>
-                    <option value="Transportation">Transportation</option>
-                    <option value="Food">Food</option>
-                    <option value="Activities">Activities</option>
-                    <option value="Shopping">Shopping</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
-                  <input
-                    type="text"
-                    value={formData.paidBy}
-                    onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Who paid for this?"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Split Type</label>
-                  <select
-                    value={formData.splitType}
-                    onChange={(e) => setFormData({ ...formData, splitType: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="EQUAL">Equal</option>
-                    <option value="CUSTOM">Custom</option>
-                    <option value="PERCENTAGE">Percentage</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Additional details..."
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    {editingExpense ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
-            </div>
+      <Modal
+        open={showModal}
+        onClose={handleCloseModal}
+        title={editingExpense ? 'Edit Expense' : 'Add New Expense'}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="Title *" required>
+            <Input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="e.g., Hotel Accommodation"
+            />
+          </FormField>
+          <FormField label="Amount *" required>
+            <Input
+              type="number"
+              step="0.01"
+              required
+              value={formData.amount}
+              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              placeholder="0.00"
+            />
+          </FormField>
+          <FormField label="Category">
+            <Select
+              value={formData.category}
+              onChange={(value) => setFormData({ ...formData, category: value })}
+              options={[
+                { value: 'Accommodation', label: 'Accommodation' },
+                { value: 'Transportation', label: 'Transportation' },
+                { value: 'Food', label: 'Food' },
+                { value: 'Activities', label: 'Activities' },
+                { value: 'Shopping', label: 'Shopping' },
+                { value: 'Other', label: 'Other' },
+              ]}
+            />
+          </FormField>
+          <FormField label="Paid By">
+            <Input
+              type="text"
+              value={formData.paidBy}
+              onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
+              placeholder="Who paid for this?"
+            />
+          </FormField>
+          <FormField label="Split Type">
+            <Select
+              value={formData.splitType}
+              onChange={(value) => setFormData({ ...formData, splitType: value as any })}
+              options={[
+                { value: 'EQUAL', label: 'Equal' },
+                { value: 'CUSTOM', label: 'Custom' },
+                { value: 'PERCENTAGE', label: 'Percentage' },
+              ]}
+            />
+          </FormField>
+          <FormField label="Date *" required>
+            <Input
+              type="date"
+              required
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            />
+          </FormField>
+          <FormField label="Description">
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              placeholder="Additional details..."
+            />
+          </FormField>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+            >
+              {editingExpense ? 'Update' : 'Create'}
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 };

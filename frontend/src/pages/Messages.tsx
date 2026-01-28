@@ -162,7 +162,7 @@ const Messages: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Messages</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Messages</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
         {/* Groups List */}

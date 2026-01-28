@@ -7,6 +7,7 @@ import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { useNavigate } from 'react-router-dom';
+import { Button, Input, Modal, FormField, Select } from '../components/ui';
 
 const statusColors: Record<string, string> = {
   PLANNING: 'bg-blue-100 text-blue-800',
@@ -222,27 +223,27 @@ const Groups: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Trip Groups</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Trip Groups</h1>
         {isAdmin(user) && (
-          <button
+          <Button
             onClick={() => handleOpenModal()}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            leftIcon={<PlusIcon className="h-5 w-5" />}
+            className="w-full sm:w-auto"
           >
-            <PlusIcon className="h-5 w-5 mr-2" />
             New Trip Group
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Search Bar */}
       <div className="bg-white rounded-lg shadow">
-        <input
+        <Input
           type="text"
           placeholder="Search trip groups..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border-0 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="border-0 shadow-none"
         />
       </div>
 
@@ -305,234 +306,200 @@ const Groups: React.FC = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/expenses?groupId=${group.id}`);
                     }}
-                    className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition"
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-700 bg-blue-50 hover:bg-blue-100"
+                    leftIcon={<CurrencyDollarIcon className="h-4 w-4" />}
                   >
-                    <CurrencyDollarIcon className="h-4 w-4" />
                     Expenses
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/itinerary?groupId=${group.id}`);
                     }}
-                    className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition"
+                    variant="outline"
+                    size="sm"
+                    className="text-purple-700 bg-purple-50 hover:bg-purple-100"
+                    leftIcon={<ClockIcon className="h-4 w-4" />}
                   >
-                    <ClockIcon className="h-4 w-4" />
                     Itinerary
-                  </button>
+                  </Button>
                 </div>
 
                 {isAdmin(user) && (
                   <div className="grid grid-cols-3 gap-2">
-                    <button
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpenMembersModal(group);
                       }}
-                      className="inline-flex justify-center items-center px-2 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50"
+                      variant="outline"
+                      size="sm"
+                      className="text-blue-700 border-blue-300 hover:bg-blue-50"
                       title="Manage Members"
                     >
                       <UserPlusIcon className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpenModal(group);
                       }}
-                      className="inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      variant="outline"
+                      size="sm"
                       title="Edit"
                     >
                       <PencilSquareIcon className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(group.id);
                       }}
-                      className="inline-flex justify-center items-center px-2 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                      variant="danger"
+                      size="sm"
                       title="Delete"
                     >
                       <TrashIcon className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
           ))}
         </div>
-      ) : (
+        ) : (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No trip groups found</p>
-          <button
+          <Button
             onClick={() => handleOpenModal()}
-            className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+            variant="ghost"
+            className="mt-4"
           >
             Create your first trip
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {editingGroup ? 'Edit Trip Group' : 'Create New Trip Group'}
-                </h2>
-                <button
-                  onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trip Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Summer Vacation 2024"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Destination
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.destination}
-                    onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Paris, France"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Budget
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="PLANNING">Planning</option>
-                    <option value="CONFIRMED">Confirmed</option>
-                    <option value="ONGOING">Ongoing</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Trip details..."
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    {editingGroup ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
-            </div>
+      <Modal
+        open={showModal}
+        onClose={handleCloseModal}
+        title={editingGroup ? 'Edit Trip Group' : 'Create New Trip Group'}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="Trip Name *" required>
+            <Input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., Summer Vacation 2024"
+            />
+          </FormField>
+          <FormField label="Destination">
+            <Input
+              type="text"
+              value={formData.destination}
+              onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+              placeholder="e.g., Paris, France"
+            />
+          </FormField>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="Start Date">
+              <Input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              />
+            </FormField>
+            <FormField label="End Date">
+              <Input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              />
+            </FormField>
           </div>
-        </div>
-      )}
+          <FormField label="Budget">
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.budget}
+              onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+              placeholder="0.00"
+            />
+          </FormField>
+          <FormField label="Status">
+            <Select
+              value={formData.status}
+              onChange={(value) => setFormData({ ...formData, status: value })}
+              options={[
+                { value: 'PLANNING', label: 'Planning' },
+                { value: 'CONFIRMED', label: 'Confirmed' },
+                { value: 'ONGOING', label: 'Ongoing' },
+                { value: 'COMPLETED', label: 'Completed' },
+                { value: 'CANCELLED', label: 'Cancelled' },
+              ]}
+            />
+          </FormField>
+          <FormField label="Description">
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              placeholder="Trip details..."
+            />
+          </FormField>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+            >
+              {editingGroup ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Members Management Modal */}
-      {showMembersModal && selectedGroup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Manage Members</h2>
-                  <p className="text-sm text-gray-600 mt-1">{selectedGroup.name}</p>
-                </div>
-                <button
-                  onClick={() => setShowMembersModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        title={
+          <div>
+            <div className="text-xl font-bold text-gray-900">Manage Members</div>
+            <p className="text-sm text-gray-600 mt-1">{selectedGroup?.name}</p>
+          </div>
+        }
+        size="lg"
+      >
 
             <div className="flex-1 overflow-y-auto p-6">
               {/* Current Members */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Current Members ({selectedGroup.members?.length || 0})
+                  Current Members ({selectedGroup?.members?.length || 0})
                 </h3>
-                <div className="space-y-2">
-                  {selectedGroup.members?.map((member) => {
+            <div className="space-y-2">
+              {selectedGroup?.members?.map((member) => {
                     const name = member.contact
                       ? `${member.contact.firstName} ${member.contact.lastName}`
                       : member.user
@@ -559,12 +526,13 @@ const Groups: React.FC = () => {
                             <span className="text-green-600 text-sm">✓ Confirmed</span>
                           )}
                           {member.role !== 'ORGANIZER' && (
-                            <button
-                              onClick={() => handleRemoveMember(selectedGroup.id, member.id)}
-                              className="text-red-600 hover:text-red-700 text-sm font-medium"
+                            <Button
+                              onClick={() => handleRemoveMember(selectedGroup!.id, member.id)}
+                              variant="danger"
+                              size="sm"
                             >
                               Remove
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -573,28 +541,28 @@ const Groups: React.FC = () => {
                 </div>
               </div>
 
-              {/* Add Members */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Add Members</h3>
-                <input
-                  type="text"
-                  placeholder="Search contacts..."
-                  value={memberSearchTerm}
-                  onChange={(e) => setMemberSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
-                />
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {contacts
-                    .filter((contact) => {
-                      const alreadyMember = selectedGroup.members?.some(
-                        (m) => m.contactId === contact.id
-                      );
-                      const matchesSearch =
-                        contact.firstName.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
-                        contact.lastName.toLowerCase().includes(memberSearchTerm.toLowerCase());
-                      return !alreadyMember && matchesSearch;
-                    })
-                    .map((contact) => {
+          {/* Add Members */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Add Members</h3>
+            <Input
+              type="text"
+              placeholder="Search contacts..."
+              value={memberSearchTerm}
+              onChange={(e) => setMemberSearchTerm(e.target.value)}
+              className="mb-3"
+            />
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {contacts
+                .filter((contact) => {
+                  const alreadyMember = selectedGroup?.members?.some(
+                    (m) => m.contactId === contact.id
+                  );
+                  const matchesSearch =
+                    contact.firstName.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                    contact.lastName.toLowerCase().includes(memberSearchTerm.toLowerCase());
+                  return !alreadyMember && matchesSearch;
+                })
+                .map((contact) => {
                       const initials = `${contact.firstName[0]}${contact.lastName[0]}`;
                       const isSelected = selectedContacts.includes(contact.id);
 
@@ -627,37 +595,35 @@ const Groups: React.FC = () => {
                         </div>
                       );
                     })}
-                  {contacts.filter((c) => {
-                    const alreadyMember = selectedGroup.members?.some((m) => m.contactId === c.id);
-                    const matchesSearch =
-                      c.firstName.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
-                      c.lastName.toLowerCase().includes(memberSearchTerm.toLowerCase());
-                    return !alreadyMember && matchesSearch;
-                  }).length === 0 && (
-                    <p className="text-center text-gray-500 py-4">No contacts available to add</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex gap-3">
-              <button
-                onClick={() => setShowMembersModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleAddMembers}
-                disabled={selectedContacts.length === 0}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                Add Selected ({selectedContacts.length})
-              </button>
+              {contacts.filter((c) => {
+                const alreadyMember = selectedGroup?.members?.some((m) => m.contactId === c.id);
+                const matchesSearch =
+                  c.firstName.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                  c.lastName.toLowerCase().includes(memberSearchTerm.toLowerCase());
+                return !alreadyMember && matchesSearch;
+              }).length === 0 && (
+                <p className="text-center text-gray-500 py-4">No contacts available to add</p>
+              )}
             </div>
           </div>
         </div>
-      )}
+        <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <Button
+            onClick={() => setShowMembersModal(false)}
+            variant="outline"
+            className="flex-1"
+          >
+            Close
+          </Button>
+          <Button
+            onClick={handleAddMembers}
+            disabled={selectedContacts.length === 0}
+            className="flex-1"
+          >
+            Add Selected ({selectedContacts.length})
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

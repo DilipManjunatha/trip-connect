@@ -4,6 +4,7 @@ import { Contact, Tag } from '../types';
 import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
+import { Button, Input, Modal, FormField } from '../components/ui';
 
 const Contacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -166,15 +167,15 @@ const Contacts: React.FC = () => {
   if (error) {
     return <div className="text-center py-12">
       <p className="text-red-600 text-lg font-semibold">{error}</p>
-      <button
+      <Button
         onClick={() => {
           setError(null);
           fetchContacts();
         }}
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        className="mt-4"
       >
         Retry
-      </button>
+      </Button>
     </div>;
   }
 
@@ -200,25 +201,25 @@ const Contacts: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Contacts</h1>
-        <button
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Contacts</h1>
+        <Button
           onClick={() => handleOpenModal()}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          leftIcon={<PlusIcon className="h-5 w-5" />}
+          className="w-full sm:w-auto"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
           Add Contact
-        </button>
+        </Button>
       </div>
 
       {/* Search Bar */}
       <div className="bg-white rounded-lg shadow">
-        <input
+        <Input
           type="text"
           placeholder="Search contacts by name or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border-0 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="border-0 shadow-none"
         />
       </div>
 
@@ -279,20 +280,24 @@ const Contacts: React.FC = () => {
                 )}
 
                 <div className="mt-4 flex gap-2">
-                  <button
+                  <Button
                     onClick={() => handleOpenModal(contact)}
-                    className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    leftIcon={<PencilSquareIcon className="h-4 w-4" />}
                   >
-                    <PencilSquareIcon className="h-4 w-4 mr-1" />
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleDelete(contact.id)}
-                    className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                    variant="danger"
+                    size="sm"
+                    className="flex-1"
+                    leftIcon={<TrashIcon className="h-4 w-4" />}
                   >
-                    <TrashIcon className="h-4 w-4 mr-1" />
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -300,192 +305,149 @@ const Contacts: React.FC = () => {
         ) : (
           <div className="col-span-full text-center py-12">
             <p className="text-gray-500 text-lg">No contacts found</p>
-            <button
+            <Button
               onClick={() => handleOpenModal()}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+              variant="ghost"
+              className="mt-4"
             >
               Create your first contact
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  {editingContact && (
-                    <div className="mr-3">
-                      {editingContact.avatar ? (
-                        <img src={editingContact.avatar} alt={editingContact.firstName} className="w-12 h-12 rounded-full" />
-                      ) : (
-                        <div 
-                          className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-semibold"
-                          style={{ backgroundColor: getAvatarColor(`${editingContact.firstName} ${editingContact.lastName}`) }}
-                        >
-                          {editingContact.firstName[0]}{editingContact.lastName[0]}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <h2 className="text-xl font-bold text-gray-900 mt-1">
-                    {editingContact ? 'Edit Contact' : 'Add New Contact'}
-                  </h2>
-                </div>
-                <button
-                  onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-600"
+      <Modal
+        open={showModal}
+        onClose={handleCloseModal}
+        title={
+          editingContact ? (
+            <div className="flex items-center gap-3">
+              {editingContact.avatar ? (
+                <img src={editingContact.avatar} alt={editingContact.firstName} className="w-12 h-12 rounded-full" />
+              ) : (
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-semibold"
+                  style={{ backgroundColor: getAvatarColor(`${editingContact.firstName} ${editingContact.lastName}`) }}
                 >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                  {editingContact.firstName[0]}{editingContact.lastName[0]}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags
-                  </label>
-                  <p className="text-xs text-gray-500 mb-3">
-                    💡 Tags automatically add this contact to corresponding Smart Lists
-                  </p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {tags.map((tag) => {
-                      const isSelected = formData.tagIds.includes(tag.id);
-                      return (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => {
-                            const newTagIds = isSelected
-                              ? formData.tagIds.filter((id) => id !== tag.id)
-                              : [...formData.tagIds, tag.id];
-                            setFormData({ ...formData, tagIds: newTagIds });
-                          }}
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors border ${
-                            isSelected
-                              ? 'border-transparent ring-1 ring-offset-1'
-                              : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
-                          }`}
-                          style={
-                            isSelected
-                              ? { 
-                                  backgroundColor: `${tag.color}20`, 
-                                  color: tag.color,
-                                  borderColor: tag.color,
-                                  boxShadow: `0 0 0 1px ${tag.color}`
-                                }
-                              : {}
-                          }
-                        >
-                          {isSelected && (
-                            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          {tag.name}
-                          {isSelected && (
-                            <span className="ml-1 text-xs opacity-75">→ List</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                    {tags.length === 0 && (
-                      <p className="text-sm text-gray-500 italic">No tags available. Create tags in the Tags page first.</p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Notes
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    {editingContact ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
+              )}
+              <span>Edit Contact</span>
             </div>
+          ) : (
+            'Add New Contact'
+          )
+        }
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="First Name *" required>
+              <Input
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              />
+            </FormField>
+            <FormField label="Last Name *" required>
+              <Input
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              />
+            </FormField>
           </div>
-        </div>
-      )}
+          <FormField label="Email">
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </FormField>
+          <FormField label="Phone">
+            <Input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+          </FormField>
+          <FormField label="Address">
+            <Input
+              type="text"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            />
+          </FormField>
+          <FormField label="Tags">
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => {
+                const isSelected = formData.tagIds.includes(tag.id);
+                return (
+                  <Button
+                    key={tag.id}
+                    type="button"
+                    variant={isSelected ? "primary" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const newTagIds = isSelected
+                        ? formData.tagIds.filter((id) => id !== tag.id)
+                        : [...formData.tagIds, tag.id];
+                      setFormData({ ...formData, tagIds: newTagIds });
+                    }}
+                    className={isSelected ? '' : ''}
+                    style={
+                      isSelected
+                        ? { 
+                            backgroundColor: `${tag.color}20`, 
+                            color: tag.color,
+                            borderColor: tag.color,
+                          }
+                        : {}
+                    }
+                  >
+                    {isSelected && (
+                      <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {tag.name}
+                  </Button>
+                );
+              })}
+              {tags.length === 0 && (
+                <p className="text-sm text-gray-500 italic">No tags available.</p>
+              )}
+            </div>
+          </FormField>
+          <FormField label="Notes">
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+            />
+          </FormField>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+            >
+              {editingContact ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeIcon,
@@ -9,12 +9,11 @@ import {
   UsersIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  QuestionMarkCircleIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
-import ProductTour from './ProductTour';
-import { useProductTour } from '../hooks/useProductTour';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, adminOnly: false },
@@ -34,7 +33,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { run, stepIndex, setStepIndex, completeTour, stopTour, resetTour } = useProductTour();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // #region agent log
   React.useEffect(() => {
@@ -48,12 +47,37 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     navigate('/login');
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile menu backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={closeMobileMenu}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="flex-shrink-0 w-64 bg-white shadow-sm">
-        <div className="flex h-16 items-center justify-center px-6 border-b border-gray-200">
+      <div
+        className={classNames(
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out',
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
+          'md:translate-x-0 md:static md:shadow-sm md:flex-shrink-0'
+        )}
+      >
+        <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
           <h1 className="text-xl font-bold text-primary-600">TripConnect</h1>
+          <button
+            onClick={closeMobileMenu}
+            className="md:hidden p-2 text-gray-400 hover:text-gray-600"
+            aria-label="Close menu"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
         </div>
         <nav className="mt-6 px-3">
           <div className="space-y-1">
@@ -72,7 +96,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    data-tour={`${item.name.toLowerCase()}-nav`}
+                    onClick={closeMobileMenu}
                     className={classNames(
                       isActive
                         ? 'bg-primary-50 border-primary-600 text-primary-600'
@@ -95,7 +119,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </nav>
         
         {/* User section */}
-        <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
@@ -117,19 +141,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             >
               <ArrowRightOnRectangleIcon className="h-5 w-5" />
             </button>
-            <button
-              onClick={resetTour}
-              className="ml-2 flex-shrink-0 p-1 text-gray-400 hover:text-gray-500"
-              title="Restart Tour"
-            >
-              <QuestionMarkCircleIcon className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile header with hamburger */}
+        <div className="md:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 text-gray-600 hover:text-gray-900"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-bold text-primary-600">TripConnect</h1>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -138,15 +167,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </main>
       </div>
-      
-      {/* Product Tour */}
-      <ProductTour
-        run={run}
-        stepIndex={stepIndex}
-        setStepIndex={setStepIndex}
-        onComplete={completeTour}
-        onStop={stopTour}
-      />
     </div>
   );
 };

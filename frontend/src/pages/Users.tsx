@@ -13,6 +13,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import DelightfulError from '../components/DelightfulError';
+import { Button, Input, Modal, FormField, Select } from '../components/ui';
 
 interface UserStats {
   totalUsers: number;
@@ -154,7 +155,7 @@ const Users: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
         <p className="mt-2 text-sm text-gray-600">
           Manage user accounts and role-based access control
         </p>
@@ -229,8 +230,134 @@ const Users: React.FC = () => {
         </div>
       )}
 
-      {/* Users Table */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+      {/* Users List */}
+      {/* Mobile Card View */}
+      <div className="block md:hidden space-y-4">
+        {users.map((user) => (
+          <div key={user.id} className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center flex-1">
+                <div className="flex-shrink-0 h-12 w-12">
+                  {user.avatar ? (
+                    <img
+                      className="h-12 w-12 rounded-full"
+                      src={user.avatar}
+                      alt=""
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-primary-600 font-medium text-base">
+                        {user.firstName[0]}
+                        {user.lastName[0]}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {user.firstName} {user.lastName}
+                    </h3>
+                    {user.id === currentUser?.id && (
+                      <span className="text-xs text-gray-400">(You)</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                  <p className="text-xs text-gray-400 mt-1">@{user.username}</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2 text-sm mb-3">
+              <div className="flex items-center">
+                <span
+                  className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
+                    user.role === 'ADMIN'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}
+                >
+                  {user.role === 'ADMIN' ? (
+                    <span className="flex items-center">
+                      <ShieldCheckIcon className="h-3 w-3 mr-1" />
+                      Admin
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <UserIcon className="h-3 w-3 mr-1" />
+                      User
+                    </span>
+                  )}
+                </span>
+              </div>
+              {user._count && (
+                <div className="text-gray-600 space-y-1">
+                  <div>{user._count.contacts} contacts • {user._count.tripGroups} groups • {user._count.messages} messages</div>
+                </div>
+              )}
+              <div className="text-gray-500 text-xs">
+                Joined {new Date(user.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            {user.id !== currentUser?.id && (
+              <div className="flex gap-2 pt-3 border-t border-gray-200">
+                <Button
+                  onClick={() => handleToggleRole(user)}
+                  variant="ghost"
+                  size="sm"
+                  className={
+                    user.role === 'ADMIN'
+                      ? 'text-yellow-600 hover:text-yellow-900 flex-1 min-h-[44px]'
+                      : 'text-green-600 hover:text-green-900 flex-1 min-h-[44px]'
+                  }
+                  title={
+                    user.role === 'ADMIN'
+                      ? 'Demote to User'
+                      : 'Promote to Admin'
+                  }
+                >
+                  {user.role === 'ADMIN' ? (
+                    <>
+                      <UserIcon className="h-5 w-5 mr-1" />
+                      <span className="hidden sm:inline">Demote</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheckIcon className="h-5 w-5 mr-1" />
+                      <span className="hidden sm:inline">Promote</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleEditUser(user)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary-600 hover:text-primary-900 flex-1 min-h-[44px]"
+                  title="Edit User"
+                >
+                  <PencilIcon className="h-5 w-5 mr-1" />
+                  <span className="hidden sm:inline">Edit</span>
+                </Button>
+                <Button
+                  onClick={() => {
+                    setUserToDelete(user);
+                    setShowDeleteModal(true);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-900 flex-1 min-h-[44px]"
+                  title="Delete User"
+                >
+                  <TrashIcon className="h-5 w-5 mr-1" />
+                  <span className="hidden sm:inline">Delete</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white shadow overflow-hidden sm:rounded-lg">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -341,13 +468,15 @@ const Users: React.FC = () => {
                     <div className="flex items-center justify-end space-x-2">
                       {user.id !== currentUser?.id && (
                         <>
-                          <button
+                          <Button
                             onClick={() => handleToggleRole(user)}
-                            className={`${
+                            variant="ghost"
+                            size="sm"
+                            className={
                               user.role === 'ADMIN'
                                 ? 'text-yellow-600 hover:text-yellow-900'
                                 : 'text-green-600 hover:text-green-900'
-                            }`}
+                            }
                             title={
                               user.role === 'ADMIN'
                                 ? 'Demote to User'
@@ -359,24 +488,28 @@ const Users: React.FC = () => {
                             ) : (
                               <ShieldCheckIcon className="h-5 w-5" />
                             )}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleEditUser(user)}
+                            variant="ghost"
+                            size="sm"
                             className="text-primary-600 hover:text-primary-900"
                             title="Edit User"
                           >
                             <PencilIcon className="h-5 w-5" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => {
                               setUserToDelete(user);
                               setShowDeleteModal(true);
                             }}
+                            variant="ghost"
+                            size="sm"
                             className="text-red-600 hover:text-red-900"
                             title="Delete User"
                           >
                             <TrashIcon className="h-5 w-5" />
-                          </button>
+                          </Button>
                         </>
                       )}
                       {user.id === currentUser?.id && (
@@ -392,167 +525,141 @@ const Users: React.FC = () => {
       </div>
 
       {/* Edit Modal */}
-      {showEditModal && editingUser && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-              <div>
-                <div className="mt-3 text-center sm:mt-0 sm:text-left">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Edit User
-                  </h3>
-                  <div className="mt-2 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.firstName}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, firstName: e.target.value })
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.lastName}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, lastName: e.target.value })
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={editForm.email}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, email: e.target.value })
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.username}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, username: e.target.value })
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Role
-                      </label>
-                      <select
-                        value={editForm.role}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            role: e.target.value as 'USER' | 'ADMIN',
-                          })
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      >
-                        <option value="USER">User</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                <button
-                  type="button"
-                  onClick={handleUpdateUser}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
-                >
-                  <CheckIcon className="h-5 w-5 mr-2" />
-                  Save Changes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingUser(null);
-                  }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm"
-                >
-                  <XMarkIcon className="h-5 w-5 mr-2" />
-                  Cancel
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingUser(null);
+        }}
+        title="Edit User"
+        size="md"
+      >
+        <div className="space-y-4">
+          <FormField label="First Name">
+            <Input
+              type="text"
+              value={editForm.firstName}
+              onChange={(e) =>
+                setEditForm({ ...editForm, firstName: e.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="Last Name">
+            <Input
+              type="text"
+              value={editForm.lastName}
+              onChange={(e) =>
+                setEditForm({ ...editForm, lastName: e.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="Email">
+            <Input
+              type="email"
+              value={editForm.email}
+              onChange={(e) =>
+                setEditForm({ ...editForm, email: e.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="Username">
+            <Input
+              type="text"
+              value={editForm.username}
+              onChange={(e) =>
+                setEditForm({ ...editForm, username: e.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="Role">
+            <Select
+              value={editForm.role}
+              onChange={(value) =>
+                setEditForm({
+                  ...editForm,
+                  role: value as 'USER' | 'ADMIN',
+                })
+              }
+              options={[
+                { value: 'USER', label: 'User' },
+                { value: 'ADMIN', label: 'Admin' },
+              ]}
+            />
+          </FormField>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowEditModal(false);
+                setEditingUser(null);
+              }}
+              className="flex-1"
+            >
+              <XMarkIcon className="h-5 w-5 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleUpdateUser}
+              className="flex-1"
+            >
+              <CheckIcon className="h-5 w-5 mr-2" />
+              Save Changes
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && userToDelete && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-              <div>
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                  <TrashIcon className="h-6 w-6 text-red-600" />
-                </div>
-                <div className="mt-3 text-center sm:mt-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Delete User
-                  </h3>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Are you sure you want to delete{' '}
-                      <strong>
-                        {userToDelete.firstName} {userToDelete.lastName}
-                      </strong>
-                      ? This action cannot be undone and will delete all associated
-                      data including contacts, groups, and messages.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                <button
-                  type="button"
-                  onClick={handleDeleteUser}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
-                >
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setUserToDelete(null);
-                  }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
+      <Modal
+        open={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }}
+        title={
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+              <TrashIcon className="h-6 w-6 text-red-600" />
             </div>
+            <span>Delete User</span>
+          </div>
+        }
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Are you sure you want to delete{' '}
+            <strong>
+              {userToDelete?.firstName} {userToDelete?.lastName}
+            </strong>
+            ? This action cannot be undone and will delete all associated
+            data including contacts, groups, and messages.
+          </p>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setUserToDelete(null);
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDeleteUser}
+              className="flex-1"
+            >
+              Delete
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

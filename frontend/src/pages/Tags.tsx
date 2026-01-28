@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Tag } from '../types';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, TagIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, TagIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import InfoTooltip from '../components/InfoTooltip';
+import { Button, Input, Modal, FormField } from '../components/ui';
 
 const Tags: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -156,26 +156,25 @@ const Tags: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Tags</h1>
-        <button
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tags</h1>
+        <Button
           onClick={() => handleOpenModal()}
-          data-tour="create-tag"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          leftIcon={<PlusIcon className="h-5 w-5" />}
+          className="w-full sm:w-auto"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
           New Tag
-        </button>
+        </Button>
       </div>
 
       {/* Search Bar */}
       <div className="bg-white rounded-lg shadow">
-        <input
+        <Input
           type="text"
           placeholder="Search tags..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border-0 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="border-0 shadow-none"
         />
       </div>
 
@@ -205,26 +204,26 @@ const Tags: React.FC = () => {
                   <span>{tag._count?.lists || 0} lists</span>
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     onClick={() => handleOpenModal(tag)}
-                    className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    leftIcon={<PencilSquareIcon className="h-4 w-4" />}
                   >
-                    <PencilSquareIcon className="h-4 w-4 mr-1" />
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleDelete(tag.id)}
                     disabled={(tag._count?.contacts || 0) > 0}
-                    className={`flex-1 inline-flex justify-center items-center px-3 py-2 border shadow-sm text-sm font-medium rounded-md ${
-                      (tag._count?.contacts || 0) > 0
-                        ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
-                        : 'border-red-300 text-red-700 bg-white hover:bg-red-50'
-                    }`}
+                    variant={(tag._count?.contacts || 0) > 0 ? 'ghost' : 'danger'}
+                    size="sm"
+                    className="flex-1"
+                    leftIcon={<TrashIcon className="h-4 w-4" />}
                     title={(tag._count?.contacts || 0) > 0 ? 'Remove tag from all contacts before deleting' : 'Delete tag'}
                   >
-                    <TrashIcon className="h-4 w-4 mr-1" />
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -233,171 +232,102 @@ const Tags: React.FC = () => {
           <EmptyState
             icon={<TagIcon className="h-16 w-16" />}
             title="No tags yet"
-            description="Tags help you organize contacts into categories. When you create a tag and assign it to contacts, a Smart List is automatically created!"
+            description="Create tags to categorize your contacts."
             actionButton={{
               label: "Create Your First Tag",
               onClick: () => handleOpenModal()
             }}
-            examples={[
-              "Language: Spanish - for Spanish speakers",
-              "Skill: Photography - for photographers",
-              "Status: VIP - for important contacts"
-            ]}
           />
         )}
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {editingTag ? 'Edit Tag' : 'Create New Tag'}
-                </h2>
+      <Modal
+        open={showModal}
+        onClose={handleCloseModal}
+        title={editingTag ? 'Edit Tag' : 'Create New Tag'}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="Tag Name *" required>
+            <Input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Tag name"
+            />
+          </FormField>
+          
+          {/* Progressive disclosure for value field */}
+          {showValueField ? (
+            <FormField label="Value (Optional)">
+              <Input
+                type="text"
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                placeholder="Optional value"
+              />
+            </FormField>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowValueField(true)}
+            >
+              <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add value (optional)
+            </Button>
+          )}
+          
+          <FormField label="Color">
+            <div className="grid grid-cols-6 gap-2">
+              {colors.map((color) => (
                 <button
-                  onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              {/* Examples Section */}
-              {!editingTag && (
-                <div className="mb-4 bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">💡 Common tag patterns:</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="font-semibold text-gray-900">Language:</span> Spanish, English, French
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-900">Skill:</span> Photography, Cooking
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-900">Status:</span> VIP, Active, Pending
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-900">Relationship:</span> Family, Friend
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tag Name *
-                    <InfoTooltip content="Categories to organize contacts (e.g., Language, Skill, Status, Relationship)" />
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Language, Skill, Status"
-                  />
-                </div>
-                
-                {/* Progressive disclosure for value field */}
-                {showValueField ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Value (Optional)
-                      <InfoTooltip content="Optional specific value (e.g., Spanish for Language tag, Photography for Skill tag)" />
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.value}
-                      onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Spanish, Photography, VIP"
-                    />
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowValueField(true)}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center"
-                  >
-                    <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add value (optional)
-                  </button>
-                )}
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Color
-                    <InfoTooltip content="Choose a color to visually identify this tag and its associated list" />
-                  </label>
-                  <div className="grid grid-cols-6 gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, color })}
-                        className={`w-full aspect-square rounded-lg transition ${
-                          formData.color === color ? 'ring-2 ring-offset-2 ring-gray-400' : ''
-                        }`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Optional description"
-                  />
-                </div>
-                
-                {/* Info Box about automatic list creation */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">What happens after creation?</h3>
-                      <p className="mt-1 text-sm text-blue-700">
-                        When you assign this tag to contacts, a Smart List will be automatically created. The list will update automatically as you add or remove this tag from contacts.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    {editingTag ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
+                  key={color}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color })}
+                  className={`w-full aspect-square rounded-lg transition ${
+                    formData.color === color ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                  }`}
+                  style={{ backgroundColor: color }}
+                  aria-label={`Select color ${color}`}
+                />
+              ))}
             </div>
+          </FormField>
+          
+          <FormField label="Description">
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              placeholder="Optional description"
+            />
+          </FormField>
+          
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+            >
+              {editingTag ? 'Update' : 'Create'}
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 };
