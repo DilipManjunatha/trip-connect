@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, ClockIcon, MapPinIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
@@ -24,8 +24,9 @@ interface Itinerary {
 const Itinerary: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id: idFromParams } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
-  const groupId = searchParams.get('groupId');
+  const groupId = idFromParams ?? searchParams.get('groupId');
 
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(true);

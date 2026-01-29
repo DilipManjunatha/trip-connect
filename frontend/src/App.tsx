@@ -18,6 +18,11 @@ import Messages from './pages/Messages';
 import Expenses from './pages/Expenses';
 import Itinerary from './pages/Itinerary';
 import Users from './pages/Users';
+import TripShell from './components/TripShell';
+import TripOverview from './pages/TripOverview';
+import TripKanban from './pages/TripKanban';
+import TripTickets from './pages/TripTickets';
+import TripChat from './pages/TripChat';
 
 /** Redirects to nested trip path when groupId is in search (backward compat §3.1). */
 function RedirectIfGroupId({
@@ -99,16 +104,36 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path={ROUTES.GROUPS}
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Groups />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
+      {/* Nested trip routes (spec §3.1, §5.4) */}
+      <Route path={ROUTES.GROUPS}>
+        <Route
+          index
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Groups />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path=":id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <TripShell />
+              </Layout>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<TripOverview />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="itinerary" element={<Itinerary />} />
+          <Route path="kanban" element={<TripKanban />} />
+          <Route path="tickets" element={<TripTickets />} />
+          <Route path="chat" element={<TripChat />} />
+        </Route>
+      </Route>
       <Route
         path={ROUTES.MESSAGES}
         element={

@@ -7,6 +7,7 @@ import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { useNavigate } from 'react-router-dom';
+import { group, groupExpenses, groupItinerary } from '../ux';
 import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const statusColors: Record<string, string> = {
@@ -339,7 +340,7 @@ const Groups: React.FC = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/expenses?groupId=${group.id}`);
+                        navigate(groupExpenses(group.id));
                       }}
                       variant="outline"
                       size="sm"
@@ -351,7 +352,7 @@ const Groups: React.FC = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/itinerary?groupId=${group.id}`);
+                        navigate(groupItinerary(group.id));
                       }}
                       variant="outline"
                       size="sm"
@@ -527,9 +528,8 @@ const Groups: React.FC = () => {
             type="button"
             onClick={() => {
               if (!selectedGroup) return;
-              const id = selectedGroup.id;
               closeActions();
-              navigate(`/expenses?groupId=${id}`);
+              navigate(groupExpenses(selectedGroup.id));
             }}
             className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
           >
@@ -542,9 +542,8 @@ const Groups: React.FC = () => {
             type="button"
             onClick={() => {
               if (!selectedGroup) return;
-              const id = selectedGroup.id;
               closeActions();
-              navigate(`/itinerary?groupId=${id}`);
+              navigate(groupItinerary(selectedGroup.id));
             }}
             className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
           >
