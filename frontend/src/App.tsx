@@ -1,9 +1,10 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Layout from './components/Layout';
+import { GROUP_ID_QUERY, ROUTES, groupExpenses, groupItinerary } from './ux';
 
 // Pages
 import Login from './pages/Login';
@@ -17,6 +18,22 @@ import Messages from './pages/Messages';
 import Expenses from './pages/Expenses';
 import Itinerary from './pages/Itinerary';
 import Users from './pages/Users';
+
+/** Redirects to nested trip path when groupId is in search (backward compat §3.1). */
+function RedirectIfGroupId({
+  redirectTo,
+  children,
+}: {
+  redirectTo: (groupId: string) => string;
+  children: React.ReactNode;
+}) {
+  const [search] = useSearchParams();
+  const groupId = search.get(GROUP_ID_QUERY);
+  if (groupId) {
+    return <Navigate to={redirectTo(groupId)} replace />;
+  }
+  return <>{children}</>;
+}
 
 function App() {
   const { loading } = useAuth();
@@ -32,12 +49,12 @@ function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path={ROUTES.LOGIN} element={<Login />} />
+      <Route path={ROUTES.REGISTER} element={<Register />} />
       
       {/* Protected routes */}
       <Route
-        path="/"
+        path={ROUTES.HOME}
         element={
           <ProtectedRoute>
             <Layout>
@@ -47,7 +64,7 @@ function App() {
         }
       />
       <Route
-        path="/contacts"
+        path={ROUTES.CONTACTS}
         element={
           <ProtectedRoute>
             <AdminRoute>
@@ -59,7 +76,7 @@ function App() {
         }
       />
       <Route
-        path="/tags"
+        path={ROUTES.TAGS}
         element={
           <ProtectedRoute>
             <AdminRoute>
@@ -71,7 +88,7 @@ function App() {
         }
       />
       <Route
-        path="/lists"
+        path={ROUTES.LISTS}
         element={
           <ProtectedRoute>
             <AdminRoute>
@@ -83,7 +100,7 @@ function App() {
         }
       />
       <Route
-        path="/groups"
+        path={ROUTES.GROUPS}
         element={
           <ProtectedRoute>
             <Layout>
@@ -93,7 +110,7 @@ function App() {
         }
       />
       <Route
-        path="/messages"
+        path={ROUTES.MESSAGES}
         element={
           <ProtectedRoute>
             <Layout>
@@ -103,27 +120,31 @@ function App() {
         }
       />
       <Route
-        path="/expenses"
+        path={ROUTES.EXPENSES}
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Expenses />
-            </Layout>
-          </ProtectedRoute>
+          <RedirectIfGroupId redirectTo={groupExpenses}>
+            <ProtectedRoute>
+              <Layout>
+                <Expenses />
+              </Layout>
+            </ProtectedRoute>
+          </RedirectIfGroupId>
         }
       />
       <Route
-        path="/itinerary"
+        path={ROUTES.ITINERARY}
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Itinerary />
-            </Layout>
-          </ProtectedRoute>
+          <RedirectIfGroupId redirectTo={groupItinerary}>
+            <ProtectedRoute>
+              <Layout>
+                <Itinerary />
+              </Layout>
+            </ProtectedRoute>
+          </RedirectIfGroupId>
         }
       />
       <Route
-        path="/users"
+        path={ROUTES.USERS}
         element={
           <ProtectedRoute>
             <AdminRoute>
@@ -136,7 +157,7 @@ function App() {
       />
       
       {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
     </Routes>
   );
 }
