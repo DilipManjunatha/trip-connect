@@ -33,6 +33,14 @@ const NoteDetail: React.FC = () => {
     reminderAt: '',
     followUp: 'NONE' as Note['followUp'],
   });
+  const [navigateToNotes, setNavigateToNotes] = useState(false);
+
+  useEffect(() => {
+    if (navigateToNotes) {
+      setNavigateToNotes(false);
+      navigate(ROUTES.NOTES, { replace: true });
+    }
+  }, [navigateToNotes, navigate]);
 
   useEffect(() => {
     if (isNew) return;
@@ -85,14 +93,13 @@ const NoteDetail: React.FC = () => {
         followUp: formData.followUp,
       };
       if (isNew) {
-        const res = await api.post('/notes', payload);
-        const created = res.data?.data ?? res.data;
+        await api.post('/notes', payload);
         toast.success('Note created');
-        navigate(`/notes/${created.id}`, { replace: true });
+        setNavigateToNotes(true);
       } else {
         await api.put(`/notes/${id}`, payload);
-        setNote((prev) => (prev ? { ...prev, ...payload } : null));
         toast.success('Note updated');
+        setNavigateToNotes(true);
       }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
