@@ -44,6 +44,16 @@ export function groupTickets(id: string): string {
   return `${ROUTES.GROUPS}/${id}/tickets`
 }
 
+/** Single ticket smart card view (FOCUS layout, spec §6.6, §7.1). */
+export function groupTicketCard(groupId: string, ticketId: string): string {
+  return `${ROUTES.GROUPS}/${groupId}/tickets/card/${ticketId}`
+}
+
 export function groupChat(id: string): string {
   return `${ROUTES.GROUPS}/${id}/chat`
+}
+
+/** Note detail path (standalone notes, spec §6.8). */
+export function noteDetail(id: string): string {
+  return `${ROUTES.NOTES}/${id}`
 }

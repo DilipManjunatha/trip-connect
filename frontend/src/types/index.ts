@@ -101,6 +101,7 @@ export interface TripGroup {
   members?: GroupMember[];
   itineraries?: Itinerary[];
   expenses?: Expense[];
+  tickets?: Ticket[];
   messages?: Message[];
   _count?: {
     members: number;
@@ -163,6 +164,61 @@ export interface Message {
   updatedAt: string;
   group?: TripGroup;
   sender?: User;
+}
+
+export type FollowUpStatus = 'NONE' | 'PENDING' | 'DONE';
+
+export interface Note {
+  id: string;
+  title: string;
+  content?: string | null;
+  reminderAt?: string | null;
+  followUp: FollowUpStatus;
+  createdAt: string;
+  updatedAt: string;
+  createdById: string;
+}
+
+export type KanbanStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
+
+export interface KanbanCard {
+  id: string;
+  groupId: string;
+  title: string;
+  description?: string | null;
+  status: KanbanStatus;
+  position: number;
+  assigneeId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TicketType = 'TICKET' | 'HOTEL' | 'BILL' | 'BOOKING' | 'DOCUMENT';
+export type OcrStatus = 'NONE' | 'PENDING' | 'COMPLETED' | 'FAILED';
+
+export interface TicketOcrData {
+  carrier?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  seat?: string;
+  gate?: string;
+  pnr?: string;
+  flightNumber?: string;
+  [key: string]: string | undefined;
+}
+
+export interface Ticket {
+  id: string;
+  groupId: string;
+  title: string;
+  category?: string | null;
+  type: TicketType;
+  filePath?: string | null;
+  fileName?: string | null;
+  ocrData?: TicketOcrData | null;
+  ocrStatus: OcrStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // API Response types
