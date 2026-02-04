@@ -16,11 +16,11 @@ export const MOBILE_NAV: UXNavSpec = {
   systems: ["people", "trips", "notes", "inbox", "settings"],
 }
 
-/** Mobile bottom bar items per spec §4.2: People, Trips, Notes, Calendar, More. */
+/** Mobile bottom bar items: Home first, then Trips, Notes, Calendar. People (admin only). */
 export const MOBILE_NAV_ITEMS = [
-  { id: "people", label: "People", href: ROUTES.CONTACTS, adminOnly: true as const },
+  { id: "home", label: "Home", href: ROUTES.HOME },
   { id: "trips", label: "Trips", href: ROUTES.GROUPS },
   { id: "notes", label: "Notes", href: ROUTES.NOTES },
   { id: "calendar", label: "Calendar", href: ROUTES.CALENDAR },
-  { id: "more", label: "More", openDrawer: true as const },
+  { id: "people", label: "People", href: ROUTES.CONTACTS, adminOnly: true as const },
 ] as const

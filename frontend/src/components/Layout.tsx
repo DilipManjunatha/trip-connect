@@ -18,7 +18,6 @@ import {
   MapIcon,
   DocumentTextIcon,
   CalendarIcon,
-  EllipsisHorizontalIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
@@ -37,11 +36,11 @@ const navigation = [
 ];
 
 const MOBILE_BAR_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  home: HomeIcon,
   people: UserGroupIcon,
   trips: MapIcon,
   notes: DocumentTextIcon,
   calendar: CalendarIcon,
-  more: EllipsisHorizontalIcon,
 };
 
 function classNames(...classes: (string | boolean | undefined)[]) {
@@ -94,7 +93,9 @@ function LayoutContent({ children, layoutIdProp }: LayoutProps) {
         )}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-primary-600">TripConnect</h1>
+          <Link to="/" className="text-xl font-bold text-primary-600 no-underline">
+            TripConnect
+          </Link>
           <button
             onClick={closeMobileMenu}
             className="md:hidden p-2 text-gray-400 hover:text-gray-600"
@@ -180,14 +181,15 @@ function LayoutContent({ children, layoutIdProp }: LayoutProps) {
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
-          <h1
+          <Link
+            to="/"
             className={classNames(
-              'font-bold text-primary-600 truncate max-w-[60vw] md:max-w-none text-center',
+              'font-bold text-primary-600 no-underline truncate max-w-[60vw] md:max-w-none text-center',
               minimalHeader ? 'text-base' : 'text-lg'
             )}
           >
             TripConnect
-          </h1>
+          </Link>
           <div className="w-10" />
         </div>
 
