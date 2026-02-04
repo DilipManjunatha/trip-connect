@@ -35,8 +35,18 @@ export const getKanbanCards = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const kanbanCardValidation = [
+/** Validation for POST (create): title required */
+export const createKanbanCardValidation = [
   body('title').trim().notEmpty().withMessage('Title is required').isLength({ max: 500 }).withMessage('Title must be at most 500 characters'),
+  body('description').optional().trim().isLength({ max: 2000 }).withMessage('Description must be at most 2000 characters'),
+  body('status').optional().isIn(['TODO', 'IN_PROGRESS', 'DONE']).withMessage('Status must be TODO, IN_PROGRESS, or DONE'),
+  body('position').optional().isInt().withMessage('Position must be an integer'),
+  body('assigneeId').optional().trim(),
+];
+
+/** Validation for PUT (update): all fields optional so moving card (status-only) is allowed */
+export const updateKanbanCardValidation = [
+  body('title').optional().trim().notEmpty().withMessage('Title must not be empty').isLength({ max: 500 }).withMessage('Title must be at most 500 characters'),
   body('description').optional().trim().isLength({ max: 2000 }).withMessage('Description must be at most 2000 characters'),
   body('status').optional().isIn(['TODO', 'IN_PROGRESS', 'DONE']).withMessage('Status must be TODO, IN_PROGRESS, or DONE'),
   body('position').optional().isInt().withMessage('Position must be an integer'),
