@@ -7,7 +7,7 @@ import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { useNavigate } from 'react-router-dom';
-import { group, groupExpenses, groupItinerary } from '../ux';
+import { group as groupOverview, groupExpenses, groupItinerary } from '../ux';
 import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const statusColors: Record<string, string> = {
@@ -265,8 +265,8 @@ const Groups: React.FC = () => {
                           <EllipsisHorizontalIcon className="h-5 w-5" />
                         </button>
                       }
-                      onClick={() => setSelectedGroup(group)}
-                      showChevron={false}
+                      onClick={() => navigate(groupOverview(group.id))}
+                      showChevron={true}
                     />
                     {idx !== filteredGroups.length - 1 ? (
                       <div className="mx-4 h-px bg-gray-100" />
@@ -282,10 +282,8 @@ const Groups: React.FC = () => {
             {filteredGroups.map((group) => (
               <div
                 key={group.id}
-                className={`bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden ${
-                  selectedGroup?.id === group.id ? 'ring-2 ring-blue-500' : ''
-                }`}
-                onClick={() => setSelectedGroup(group)}
+                className="bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer overflow-hidden"
+                onClick={() => navigate(groupOverview(group.id))}
               >
                 {group.coverImage && (
                   <div

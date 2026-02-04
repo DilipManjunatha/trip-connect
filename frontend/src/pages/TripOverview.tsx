@@ -1,10 +1,11 @@
 /**
  * Trip overview — quick links to Expenses, Itinerary, Kanban, Tickets, Chat (spec §6.2).
  * Rendered at /groups/:id when not redirecting to a sub-tab.
+ * Uses useTripFromRoute() for trip data (spec §3.1).
  */
 
 import React from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   CurrencyDollarIcon,
   MapPinIcon,
@@ -13,23 +14,30 @@ import {
   ChatBubbleLeftRightIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import { TripGroup } from '../types';
+import { useTripFromRoute } from '../context/TripContext';
 import { groupExpenses, groupItinerary, groupKanban, groupTickets, groupChat } from '../ux';
 import { Button } from '../components/ui';
-
-type OutletContext = { trip: TripGroup; groupId: string };
 
 const TRIP_LINKS = [
   { label: 'Expenses', to: groupExpenses, icon: CurrencyDollarIcon },
   { label: 'Itinerary', to: groupItinerary, icon: MapPinIcon },
-  { label: 'Kanban', to: groupKanban, icon: ViewColumnsIcon },
+  { label: 'Tasks', to: groupKanban, icon: ViewColumnsIcon },
   { label: 'Tickets', to: groupTickets, icon: TicketIcon },
   { label: 'Chat', to: groupChat, icon: ChatBubbleLeftRightIcon },
 ] as const;
 
 const TripOverview: React.FC = () => {
-  const { trip, groupId } = useOutletContext<OutletContext>();
+  const { trip, loading, error, groupId, refetch } = useTripFromRoute();
   const navigate = useNavigate();
+
+  if (loading || !trip || !groupId) {
+    if (error) return null; // TripShell already shows error UI
+    return (
+      <div className="flex justify-center items-center min-h-[120px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-600 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

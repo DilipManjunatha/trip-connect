@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -22,22 +22,19 @@ import TripShell from './components/TripShell';
 import TripOverview from './pages/TripOverview';
 import TripKanban from './pages/TripKanban';
 import TripTickets from './pages/TripTickets';
+import TicketCardView from './pages/TicketCardView';
 import TripChat from './pages/TripChat';
+import Notes from './pages/Notes';
+import NoteDetail from './pages/NoteDetail';
 
-/** Redirects to nested trip path when groupId is in search (backward compat §3.1). */
-function RedirectIfGroupId({
-  redirectTo,
-  children,
-}: {
-  redirectTo: (groupId: string) => string;
-  children: React.ReactNode;
-}) {
+const Calendar = lazy(() => import('./pages/Calendar'));
+
+/** Legacy /expenses and /itinerary: redirect to nested path if groupId in search, else to trip list (Task 1.6). */
+function LegacyTripRedirect({ toPath }: { toPath: (groupId: string) => string }) {
   const [search] = useSearchParams();
   const groupId = search.get(GROUP_ID_QUERY);
-  if (groupId) {
-    return <Navigate to={redirectTo(groupId)} replace />;
-  }
-  return <>{children}</>;
+  if (groupId) return <Navigate to={toPath(groupId)} replace />;
+  return <Navigate to={ROUTES.GROUPS} replace />;
 }
 
 function App() {
@@ -131,42 +128,21 @@ function App() {
           <Route path="itinerary" element={<Itinerary />} />
           <Route path="kanban" element={<TripKanban />} />
           <Route path="tickets" element={<TripTickets />} />
+          <Route path="tickets/card/:ticketId" element={<TicketCardView />} />
           <Route path="chat" element={<TripChat />} />
         </Route>
       </Route>
       <Route
         path={ROUTES.MESSAGES}
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Messages />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={<Navigate to={ROUTES.GROUPS} replace />}
       />
       <Route
         path={ROUTES.EXPENSES}
-        element={
-          <RedirectIfGroupId redirectTo={groupExpenses}>
-            <ProtectedRoute>
-              <Layout>
-                <Expenses />
-              </Layout>
-            </ProtectedRoute>
-          </RedirectIfGroupId>
-        }
+        element={<LegacyTripRedirect toPath={groupExpenses} />}
       />
       <Route
         path={ROUTES.ITINERARY}
-        element={
-          <RedirectIfGroupId redirectTo={groupItinerary}>
-            <ProtectedRoute>
-              <Layout>
-                <Itinerary />
-              </Layout>
-            </ProtectedRoute>
-          </RedirectIfGroupId>
-        }
+        element={<LegacyTripRedirect toPath={groupItinerary} />}
       />
       <Route
         path={ROUTES.USERS}
@@ -180,7 +156,46 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
+      <Route
+        path={ROUTES.NOTES}
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Notes />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={`${ROUTES.NOTES}/:id`}
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <NoteDetail />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.CALENDAR}
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Suspense
+                fallback={
+                  <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-500 border-t-transparent" />
+                    <p className="text-gray-500 text-sm">Loading calendar…</p>
+                  </div>
+                }
+              >
+                <Calendar />
+              </Suspense>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* Catch all route */}
       <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
     </Routes>
