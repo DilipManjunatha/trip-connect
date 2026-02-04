@@ -18,6 +18,9 @@ import itineraryRoutes from './routes/itineraries';
 import expenseRoutes from './routes/expenses';
 import messageRoutes from './routes/messages';
 import userRoutes from './routes/users';
+import noteRoutes from './routes/notes';
+import kanbanRoutes from './routes/kanban';
+import ticketRoutes from './routes/tickets';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -73,22 +76,21 @@ const corsOrigin = (origin: string | undefined, callback: (err: Error | null, al
     return callback(null, true);
   }
   
-  // In development, allow local network IPs (for mobile web access)
-  if (process.env.NODE_ENV === 'development') {
-    // Allow localhost variants
+  // When not in production, allow localhost (any port) and local network IPs (for mobile web / different dev ports)
+  if (process.env.NODE_ENV !== 'production') {
+    // Allow localhost variants (any port - Vite may use 5173, 5174, etc.)
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
-    
-    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-    const localNetworkPattern = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}):\d+$/;
+    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) with any port
+    const localNetworkPattern = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
     if (localNetworkPattern.test(origin)) {
       return callback(null, true);
     }
   }
   
-  // Reject origin
-  callback(new Error('Not allowed by CORS'));
+  // Reject origin (use false so CORS middleware can respond without throwing)
+  callback(null, false);
 };
 
 // Socket.io CORS configuration
@@ -120,6 +122,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+// Ticket file uploads (spec §6.6)
+app.use('/uploads', express.static('uploads'));
 
 // Socket.io authentication middleware
 io.use(async (socket: Socket, next) => {
@@ -288,8 +292,11 @@ app.use('/api/lists', listRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/groups/:groupId/itineraries', itineraryRoutes);
 app.use('/api/groups/:groupId/expenses', expenseRoutes);
+app.use('/api/groups/:groupId/kanban', kanbanRoutes);
+app.use('/api/groups/:groupId/tickets', ticketRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/notes', noteRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
