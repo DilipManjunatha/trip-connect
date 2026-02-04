@@ -1,9 +1,9 @@
 /**
  * TripShell — wraps all /groups/:id/... routes (TRIP_CONNECT_UI_UX_SPEC §3.1, §5.4).
- * Reads id from useParams(), fetches/caches trip for header/breadcrumb, renders sub-nav (tabs).
+ * Uses TripContext (useTripFromRoute) for trip data; renders sub-nav (tabs).
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Outlet, useParams, useNavigate, NavLink } from 'react-router-dom';
 import {
   ChevronLeftIcon,
@@ -15,8 +15,7 @@ import {
   ChatBubbleLeftRightIcon,
   HomeIcon,
 } from '@heroicons/react/24/outline';
-import { api } from '../services/api';
-import { TripGroup } from '../types';
+import { TripProvider, useTripFromRoute } from '../context/TripContext';
 import { ROUTES, group, groupExpenses, groupItinerary, groupKanban, groupTickets, groupChat } from '../ux';
 import DelightfulError from './DelightfulError';
 import { Button } from './ui';
@@ -25,7 +24,7 @@ const TRIP_SUB_NAV = [
   { label: 'Overview', to: (id: string) => group(id), icon: HomeIcon },
   { label: 'Expenses', to: (id: string) => groupExpenses(id), icon: CurrencyDollarIcon },
   { label: 'Itinerary', to: (id: string) => groupItinerary(id), icon: MapPinIcon },
-  { label: 'Kanban', to: (id: string) => groupKanban(id), icon: ViewColumnsIcon },
+  { label: 'Tasks', to: (id: string) => groupKanban(id), icon: ViewColumnsIcon },
   { label: 'Tickets', to: (id: string) => groupTickets(id), icon: TicketIcon },
   { label: 'Chat', to: (id: string) => groupChat(id), icon: ChatBubbleLeftRightIcon },
 ] as const;
@@ -34,46 +33,18 @@ function classNames(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const TripShell: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+/** Format date as DD MMM YYYY (e.g. 02 Jan 2026). */
+function formatDDMMMYYYY(dateStr: string): string {
+  const d = new Date(dateStr);
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function TripShellContent() {
   const navigate = useNavigate();
-  const [trip, setTrip] = useState<TripGroup | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [networkError, setNetworkError] = useState(false);
-
-  useEffect(() => {
-    if (!id) {
-      navigate(ROUTES.GROUPS, { replace: true });
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setNetworkError(false);
-        const res = await api.get(`/groups/${id}`);
-        const data = res.data?.data ?? res.data;
-        if (!cancelled && data) {
-          setTrip(typeof data.id !== 'undefined' ? data : { ...data, id });
-        } else {
-          setTrip(null);
-        }
-      } catch (err: unknown) {
-        if (!cancelled) {
-          const isNetwork = (err as { isNetworkError?: boolean }).isNetworkError;
-          setNetworkError(!!isNetwork);
-          setTrip(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id, navigate]);
-
-  if (!id) return null;
+  const { trip, loading, error, groupId, refetch } = useTripFromRoute();
 
   if (loading) {
     return (
@@ -83,22 +54,17 @@ const TripShell: React.FC = () => {
     );
   }
 
-  if (networkError) {
+  if (error === 'network') {
     return (
       <DelightfulError
         onRetry={() => {
-          setNetworkError(false);
-          setLoading(true);
-          api.get(`/groups/${id}`).then((res) => {
-            const data = res.data?.data ?? res.data;
-            setTrip(data ? { ...data, id } : null);
-          }).catch(() => setNetworkError(true)).finally(() => setLoading(false));
+          refetch();
         }}
       />
     );
   }
 
-  if (!trip) {
+  if (error === 'not_found' || !trip || !groupId) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 mb-4">Trip not found.</p>
@@ -111,39 +77,35 @@ const TripShell: React.FC = () => {
 
   const dates =
     trip.startDate && trip.endDate
-      ? `${new Date(trip.startDate).toLocaleDateString()} – ${new Date(trip.endDate).toLocaleDateString()}`
+      ? `${formatDDMMMYYYY(trip.startDate)} – ${formatDDMMMYYYY(trip.endDate)}`
       : trip.startDate
-        ? new Date(trip.startDate).toLocaleDateString()
+        ? formatDDMMMYYYY(trip.startDate)
         : null;
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb / header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Sticky trip context bar — shows trip group name */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 py-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0 max-w-7xl mx-auto">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(ROUTES.GROUPS)}
-            className="shrink-0 p-1"
+            className="shrink-0 p-1.5 text-gray-500 hover:text-gray-900"
             aria-label="Back to trips"
           >
-            <ChevronLeftIcon className="h-5 w-5 text-gray-500" />
+            <ChevronLeftIcon className="h-5 w-5" />
           </Button>
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-gray-900 truncate">{trip.name}</h1>
-            {(trip.destination || dates) && (
-              <p className="text-sm text-gray-500 truncate flex items-center gap-1">
-                {trip.destination && <span>{trip.destination}</span>}
-                {trip.destination && dates && <span>·</span>}
-                {dates && (
-                  <span className="inline-flex items-center gap-0.5">
-                    <CalendarIcon className="h-4 w-4 shrink-0" />
-                    {dates}
-                  </span>
-                )}
-              </p>
-            )}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate" title={trip.name}>
+              {trip.name}
+            </h1>
+              {dates && (
+                <p className="text-sm text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                  <CalendarIcon className="h-4 w-4 shrink-0" />
+                  {dates}
+                </p>
+              )}
           </div>
         </div>
       </div>
@@ -154,7 +116,7 @@ const TripShell: React.FC = () => {
         aria-label="Trip sections"
       >
         {TRIP_SUB_NAV.map(({ label, to, icon: Icon }) => {
-          const href = to(id);
+          const href = to(groupId);
           return (
             <NavLink
               key={label}
@@ -177,8 +139,27 @@ const TripShell: React.FC = () => {
       </nav>
 
       {/* Nested route content */}
-      <Outlet context={{ trip, groupId: id }} />
+      <Outlet context={{ trip, groupId }} />
     </div>
+  );
+}
+
+const TripShell: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!id) {
+      navigate(ROUTES.GROUPS, { replace: true });
+    }
+  }, [id, navigate]);
+
+  if (!id) return null;
+
+  return (
+    <TripProvider id={id}>
+      <TripShellContent />
+    </TripProvider>
   );
 };
 
