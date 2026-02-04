@@ -27,8 +27,25 @@ model User {
   tripGroups  TripGroup[]
   messages    Message[]
   groupMembers GroupMember[]
+  notes       Note[]
 
   @@map("users")
+}
+
+model Note {
+  id          String        @id @default(cuid())
+  title       String
+  content     String?
+  reminderAt  DateTime?
+  followUp    FollowUpStatus @default(NONE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdById String
+
+  // Relationships
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("notes")
 }
 
 model Contact {
@@ -132,8 +149,44 @@ model TripGroup {
   itineraries Itinerary[]
   expenses    Expense[]
   messages    Message[]
+  kanbanCards KanbanCard[]
+  tickets     Ticket[]
 
   @@map("trip_groups")
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  groupId     String
+  title       String
+  category    String?       // e.g. Flight, Hotel, Train — for list grouping (§6.6)
+  type        TicketType   @default(TICKET) // for smart card icon/layout (§7.1)
+  filePath    String?      // server path to attached file
+  fileName    String?      // original file name
+  ocrData     Json?        // extracted fields: carrier, time, seat, gate, PNR, etc.
+  ocrStatus   OcrStatus    @default(NONE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  group TripGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("tickets")
+}
+
+model KanbanCard {
+  id          String       @id @default(cuid())
+  groupId     String
+  title       String
+  description String?
+  status      KanbanStatus  @default(TODO)
+  position    Int           @default(0)
+  assigneeId  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  group TripGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("kanban_cards")
 }
 
 model GroupMember {
@@ -240,4 +293,31 @@ enum MessageType {
   IMAGE
   FILE
   ANNOUNCEMENT
+}
+
+enum FollowUpStatus {
+  NONE
+  PENDING
+  DONE
+}
+
+enum KanbanStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TicketType {
+  TICKET
+  HOTEL
+  BILL
+  BOOKING
+  DOCUMENT
+}
+
+enum OcrStatus {
+  NONE
+  PENDING
+  COMPLETED
+  FAILED
 }
