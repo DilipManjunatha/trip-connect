@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { useNavigate } from 'react-router-dom';
 import { group as groupOverview, groupExpenses, groupItinerary } from '../ux';
-import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
+import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const statusColors: Record<string, string> = {
   PLANNING: 'bg-blue-100 text-blue-800',
@@ -129,7 +129,7 @@ const Groups: React.FC = () => {
         toast.success('Trip group updated successfully');
       } else {
         await api.post('/groups', payload);
-        toast.success('Trip group created successfully');
+        toast.success('Trip created successfully');
       }
       handleCloseModal();
       fetchGroups();
@@ -140,7 +140,7 @@ const Groups: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this trip group?')) return;
+    if (!confirm('Are you sure you want to delete this trip?')) return;
     try {
       await api.delete(`/groups/${id}`);
       toast.success('Trip group deleted successfully');
@@ -222,15 +222,20 @@ const Groups: React.FC = () => {
   return (
     <div className="space-y-4">
       <LargeTitleHeader
-        title="Trip Groups"
+        title="Trips"
         action={
           isAdmin(user) ? (
-            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
-              New
-            </Button>
+            <span className="hidden md:inline-block">
+              <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+                New
+              </Button>
+            </span>
           ) : null
         }
       />
+      {isAdmin(user) && (
+        <CreateFAB label="Add trip" onClick={() => handleOpenModal()} />
+      )}
 
       <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search groups" />
 
@@ -406,7 +411,7 @@ const Groups: React.FC = () => {
         </>
         ) : (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No trip groups found</p>
+          <p className="text-gray-500 text-lg">No trips found</p>
           <Button
             onClick={() => handleOpenModal()}
             variant="ghost"
@@ -433,11 +438,11 @@ const Groups: React.FC = () => {
             status: 'PLANNING',
           });
         }}
-        title={editingGroup ? 'Edit Trip Group' : 'Create New Trip Group'}
+        title={editingGroup ? 'Edit Trip' : 'Create New Trip'}
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Trip Name *" required>
+          <FormField label="Trip Name" required>
             <Input
               type="text"
               required
@@ -529,7 +534,7 @@ const Groups: React.FC = () => {
               closeActions();
               navigate(groupExpenses(selectedGroup.id));
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <CurrencyDollarIcon className="h-5 w-5 text-gray-500" />
@@ -543,7 +548,7 @@ const Groups: React.FC = () => {
               closeActions();
               navigate(groupItinerary(selectedGroup.id));
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <ClockIcon className="h-5 w-5 text-gray-500" />
@@ -560,7 +565,7 @@ const Groups: React.FC = () => {
                   closeActions();
                   handleOpenMembersModal(g);
                 }}
-                className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+                className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
               >
                 <span className="inline-flex items-center gap-2">
                   <UserPlusIcon className="h-5 w-5 text-gray-500" />
@@ -575,7 +580,7 @@ const Groups: React.FC = () => {
                   closeActions();
                   handleOpenModal(g);
                 }}
-                className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+                className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
               >
                 <span className="inline-flex items-center gap-2">
                   <PencilSquareIcon className="h-5 w-5 text-gray-500" />
@@ -590,7 +595,7 @@ const Groups: React.FC = () => {
                   closeActions();
                   handleDelete(id);
                 }}
-                className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+                className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50 flex items-center"
               >
                 <span className="inline-flex items-center gap-2">
                   <TrashIcon className="h-5 w-5 text-error-500" />

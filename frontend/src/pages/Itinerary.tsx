@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { useTripFromRoute } from '../context/TripContext';
-import { Button, Input, Modal, FormField } from '../components/ui';
+import { Button, CreateFAB, Input, Modal, FormField } from '../components/ui';
 import type { ItineraryStop } from '../components/ItineraryFlowchart';
 
 const ItineraryFlowchart = lazy(() => import('../components/ItineraryFlowchart'));
@@ -222,15 +222,17 @@ const Itinerary: React.FC = () => {
               Flowchart
             </button>
           </div>
-          <Button
-            onClick={() => handleOpenModal()}
-            leftIcon={<PlusIcon className="h-5 w-5" />}
-            className="shrink-0"
-          >
-            Add Activity
-          </Button>
+          <span className="hidden md:inline-block shrink-0">
+            <Button
+              onClick={() => handleOpenModal()}
+              leftIcon={<PlusIcon className="h-5 w-5" />}
+            >
+              Add Activity
+            </Button>
+          </span>
         </div>
       </div>
+      <CreateFAB label="Add activity" onClick={() => handleOpenModal()} />
 
       {/* Timeline view: vertical chronological */}
       {view === 'timeline' && (
@@ -355,7 +357,7 @@ const Itinerary: React.FC = () => {
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Title *" required>
+          <FormField label="Title" required>
             <Input
               type="text"
               required
@@ -373,7 +375,7 @@ const Itinerary: React.FC = () => {
             />
           </FormField>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Start Time *" required>
+            <FormField label="Start Time" required>
               <Input
                 type="datetime-local"
                 required

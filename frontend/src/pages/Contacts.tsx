@@ -4,7 +4,7 @@ import { Contact, Tag } from '../types';
 import { PlusIcon, PencilSquareIcon, TrashIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
-import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
+import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
 
 const Contacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -205,11 +205,14 @@ const Contacts: React.FC = () => {
       <LargeTitleHeader
         title="Contacts"
         action={
-          <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
-            Add
-          </Button>
+          <span className="hidden md:inline-block">
+            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+              Add
+            </Button>
+          </span>
         }
       />
+      <CreateFAB label="Add contact" onClick={() => handleOpenModal()} />
 
       <SearchField
         value={searchTerm}
@@ -323,7 +326,7 @@ const Contacts: React.FC = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="First Name *" required>
+            <FormField label="First Name" required>
               <Input
                 type="text"
                 required
@@ -331,7 +334,7 @@ const Contacts: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               />
             </FormField>
-            <FormField label="Last Name *" required>
+            <FormField label="Last Name" required>
               <Input
                 type="text"
                 required
@@ -442,7 +445,7 @@ const Contacts: React.FC = () => {
               closeActions();
               handleOpenModal(selectedContact);
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <PencilSquareIcon className="h-5 w-5 text-gray-500" />
@@ -457,7 +460,7 @@ const Contacts: React.FC = () => {
               closeActions();
               handleDelete(id);
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <TrashIcon className="h-5 w-5 text-error-500" />

@@ -17,17 +17,25 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
-import { Button, Input, Modal, FormField, Select } from '../components/ui';
+import EmptyState from '../components/EmptyState';
+import { Button, CreateFAB, Input, Modal, FormField, Select } from '../components/ui';
 import { groupTicketCard } from '../ux/routes';
+import { getUploadUrl, openAttachment } from '../utils/uploadUrl';
 import type { Ticket, TicketType } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-
-function getUploadUrl(filePath: string | null | undefined): string | null {
-  if (!filePath) return null;
-  // Backend may store "uploads/tickets/x" (legacy) or "tickets/x"; avoid double /uploads/
-  const pathUnderUploads = filePath.replace(/^uploads\/?/, '');
-  return `${API_BASE}/uploads/${pathUnderUploads}`;
+function OcrStatusBadge({ status }: { status: Ticket['ocrStatus'] }) {
+  const config: Record<Ticket['ocrStatus'], { label: string; className: string }> = {
+    NONE: { label: 'Not scanned', className: 'bg-gray-100 text-gray-600' },
+    PENDING: { label: 'Processing…', className: 'bg-primary-50 text-primary-700' },
+    COMPLETED: { label: 'Scanned', className: 'bg-success-100 text-success-700' },
+    FAILED: { label: 'Scan failed', className: 'bg-error-50 text-error-700' },
+  };
+  const { label, className } = config[status];
+  return (
+    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${className}`}>
+      {label}
+    </span>
+  );
 }
 
 const TICKET_TYPES: { value: TicketType; label: string }[] = [
@@ -174,8 +182,19 @@ const TripTickets: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="space-y-8 animate-pulse">
+        <div className="h-9 w-48 bg-gray-200 rounded-lg" />
+        <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="h-12 bg-gray-100 rounded-none" />
+          <ul className="divide-y divide-gray-200">
+            {[1, 2, 3].map((i) => (
+              <li key={i} className="p-4">
+                <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
+                <div className="h-4 w-1/2 bg-gray-100 rounded" />
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     );
   }
@@ -191,46 +210,64 @@ const TripTickets: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tickets</h1>
-        <Button leftIcon={<PlusIcon className="h-5 w-5" />} onClick={() => { setEditingTicket(null); setFormData({ title: '', category: '', type: 'TICKET' }); setFile(null); setShowAddModal(true); }}>
-          Add ticket
-        </Button>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Tickets</h1>
+        <span className="hidden md:inline-block">
+          <Button leftIcon={<PlusIcon className="h-5 w-5" />} onClick={() => { setEditingTicket(null); setFormData({ title: '', category: '', type: 'TICKET' }); setFile(null); setShowAddModal(true); }}>
+            Add ticket
+          </Button>
+        </span>
       </div>
+      <CreateFAB
+        label="Add ticket"
+        onClick={() => { setEditingTicket(null); setFormData({ title: '', category: '', type: 'TICKET' }); setFile(null); setShowAddModal(true); }}
+      />
 
       {tickets.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <TicketIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <p className="text-gray-500 text-lg mt-4">No tickets yet</p>
-          <Button variant="ghost" className="mt-4" onClick={() => setShowAddModal(true)}>
-            Add your first ticket
-          </Button>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <EmptyState
+            icon={<TicketIcon className="h-14 w-14" />}
+            title="No tickets yet"
+            description="Add flight, train, or hotel confirmations. Attach a file and run OCR to show carrier, time, seat, gate, and PNR on a smart card."
+            actionButton={{ label: 'Add your first ticket', onClick: () => setShowAddModal(true) }}
+            examples={['Flight or train e-tickets', 'Hotel confirmations', 'Activity vouchers']}
+          />
         </div>
       ) : (
         <div className="space-y-8">
           {ticketsByCategory.map(({ category, tickets: catTickets }) => (
-            <section key={category} className="bg-white rounded-lg shadow overflow-hidden">
-              <h2 className="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+            <section key={category} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <h2 className="px-4 py-3 bg-gray-50 border-b border-gray-200 text-base font-semibold text-gray-800">
                 {category}
               </h2>
               <ul className="divide-y divide-gray-200">
                 {catTickets.map((ticket) => (
-                  <li key={ticket.id} className="p-4">
+                  <li key={ticket.id} className="p-4 hover:bg-gray-50/50 transition-colors">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900">{ticket.title}</p>
-                        <p className="text-sm text-gray-500">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-gray-900">{ticket.title}</p>
+                          <OcrStatusBadge status={ticket.ocrStatus} />
+                        </div>
+                        <p className="text-sm text-gray-500 mt-0.5">
                           {ticket.fileName ? (
-                            <a
-                              href={getUploadUrl(ticket.filePath) ?? '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary-600 hover:underline inline-flex items-center gap-1"
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const url = getUploadUrl(ticket.filePath);
+                                if (!url) return;
+                                try {
+                                  await openAttachment(url, ticket.fileName);
+                                } catch {
+                                  toast.error('Failed to open file');
+                                }
+                              }}
+                              className="text-primary-600 hover:underline inline-flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
                             >
                               {ticket.fileName}
-                              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-                            </a>
+                              <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0" />
+                            </button>
                           ) : (
                             'No file'
                           )}
@@ -239,22 +276,27 @@ const TripTickets: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => openCardView(ticket)}
-                            className="text-sm text-primary-600 hover:underline mt-1"
+                            className="text-sm text-primary-600 hover:underline mt-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
                           >
                             View smart card →
                           </button>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        {ticket.ocrStatus !== 'COMPLETED' && ticket.ocrStatus !== 'PENDING' && (
+                        {(ticket.filePath || ticket.fileName) && (
                           <Button
                             variant="ghost"
                             size="sm"
                             leftIcon={<SparklesIcon className="h-4 w-4" />}
                             onClick={() => handleProcessOcr(ticket)}
                             disabled={!!processingOcr}
+                            title={ticket.ocrStatus === 'COMPLETED' ? 'Re-run OCR if data is wrong' : 'Extract text from ticket file'}
                           >
-                            {processingOcr === ticket.id ? 'Processing…' : 'Run OCR'}
+                            {processingOcr === ticket.id
+                              ? 'Processing…'
+                              : ticket.ocrStatus === 'COMPLETED'
+                                ? 'Re-run OCR'
+                                : 'Run OCR'}
                           </Button>
                         )}
                         <Button
@@ -262,6 +304,7 @@ const TripTickets: React.FC = () => {
                           size="sm"
                           onClick={() => openCardView(ticket)}
                           title="Open card (full screen)"
+                          className="min-h-touch min-w-touch flex items-center justify-center"
                         >
                           <ArrowTopRightOnSquareIcon className="h-5 w-5" />
                         </Button>
@@ -269,13 +312,14 @@ const TripTickets: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => { setEditingTicket(ticket); setFormData({ title: ticket.title, category: ticket.category || '', type: ticket.type }); setShowAddModal(true); }}
+                          className="min-h-touch min-w-touch flex items-center justify-center"
                         >
                           <PencilSquareIcon className="h-5 w-5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600"
+                          className="text-red-600 min-h-touch min-w-touch flex items-center justify-center"
                           onClick={() => handleDelete(ticket.id)}
                         >
                           <TrashIcon className="h-5 w-5" />

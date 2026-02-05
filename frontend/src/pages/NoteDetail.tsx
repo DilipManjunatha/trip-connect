@@ -26,7 +26,7 @@ const NoteDetail: React.FC = () => {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [networkError, setNetworkError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -48,7 +48,7 @@ const NoteDetail: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
-        setNetworkError(false);
+        setLoadError(false);
         const res = await api.get(`/notes/${id}`);
         const data = res.data?.data ?? res.data;
         if (!cancelled && data) {
@@ -63,11 +63,13 @@ const NoteDetail: React.FC = () => {
           });
         }
       } catch (err: unknown) {
-        const e = err as { isNetworkError?: boolean; response?: { status: number } };
+        const e = err as { response?: { status: number } };
         if (!cancelled) {
-          setNetworkError(!!e.isNetworkError);
           if (e.response?.status === 404) navigate(ROUTES.NOTES, { replace: true });
-          else toast.error('Failed to load note');
+          else {
+            setLoadError(true);
+            toast.error('Failed to load note');
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -129,24 +131,26 @@ const NoteDetail: React.FC = () => {
     );
   }
 
-  if (networkError && !isNew) {
+  if (loadError && !isNew) {
     return (
       <DelightfulError
         onRetry={() => {
-          setNetworkError(false);
+          setLoadError(false);
           setLoading(true);
           api.get(`/notes/${id}`)
             .then((res) => {
               const data = res.data?.data ?? res.data;
-              setNote(data);
-              setFormData({
-                title: data.title ?? '',
-                content: data.content ?? '',
-                reminderAt: data.reminderAt ? new Date(data.reminderAt).toISOString().slice(0, 16) : '',
-                followUp: data.followUp ?? 'NONE',
-              });
+              if (data) {
+                setNote(data);
+                setFormData({
+                  title: data.title ?? '',
+                  content: data.content ?? '',
+                  reminderAt: data.reminderAt ? new Date(data.reminderAt).toISOString().slice(0, 16) : '',
+                  followUp: data.followUp ?? 'NONE',
+                });
+              }
             })
-            .catch(() => setNetworkError(true))
+            .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
         }}
       />
@@ -160,7 +164,7 @@ const NoteDetail: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={() => navigate(ROUTES.NOTES)}
-          className="p-1"
+          className="min-h-touch min-w-touch flex items-center justify-center p-1"
           aria-label="Back to notes"
         >
           <ArrowLeftIcon className="h-5 w-5" />

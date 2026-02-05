@@ -225,7 +225,7 @@ const TripKanban: React.FC = () => {
         <p className="text-sm text-gray-500">
           Tasks and reminders for <strong>{trip.name}</strong>
         </p>
-        <Button onClick={() => openCreate()} aria-label="Add card">
+        <Button onClick={() => openCreate()} aria-label="Add card" className="min-h-touch min-w-touch flex items-center justify-center">
           <PlusIcon className="h-5 w-5" />
         </Button>
       </div>
@@ -243,7 +243,7 @@ const TripKanban: React.FC = () => {
               <button
                 type="button"
                 onClick={() => openCreate(col.id)}
-                className="p-2 -m-1 rounded-lg opacity-80 hover:opacity-100 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400"
+                className="flex items-center justify-center min-h-touch min-w-touch p-2 rounded-lg opacity-80 hover:opacity-100 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400"
                 aria-label={`Add card to ${col.label}`}
               >
                 <PlusIcon className="h-5 w-5" />

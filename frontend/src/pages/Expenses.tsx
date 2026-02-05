@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { useTripFromRoute } from '../context/TripContext';
-import { Button, Input, Modal, FormField, Select } from '../components/ui';
+import { Button, CreateFAB, Input, Modal, FormField, Select } from '../components/ui';
 import type { GroupMember } from '../types';
 
 /** Category order for list-by-category (spec §6.3). */
@@ -210,14 +210,17 @@ const Expenses: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Expenses</h1>
-        <Button
-          onClick={() => handleOpenModal()}
-          leftIcon={<PlusIcon className="h-5 w-5" />}
-          className="w-full sm:w-auto"
-        >
-          Add Expense
-        </Button>
+        <span className="hidden md:inline-block">
+          <Button
+            onClick={() => handleOpenModal()}
+            leftIcon={<PlusIcon className="h-5 w-5" />}
+            className="w-full sm:w-auto"
+          >
+            Add Expense
+          </Button>
+        </span>
       </div>
+      <CreateFAB label="Add expense" onClick={() => handleOpenModal()} />
 
       {/* Total Summary Card */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
@@ -411,7 +414,7 @@ const Expenses: React.FC = () => {
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Title *" required>
+          <FormField label="Title" required>
             <Input
               type="text"
               required
@@ -420,7 +423,7 @@ const Expenses: React.FC = () => {
               placeholder="e.g., Hotel Accommodation"
             />
           </FormField>
-          <FormField label="Amount *" required>
+          <FormField label="Amount" required>
             <Input
               type="number"
               step="0.01"
@@ -463,7 +466,7 @@ const Expenses: React.FC = () => {
               ]}
             />
           </FormField>
-          <FormField label="Date *" required>
+          <FormField label="Date" required>
             <Input
               type="date"
               required

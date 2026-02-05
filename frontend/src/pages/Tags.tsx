@@ -5,7 +5,7 @@ import { EllipsisHorizontalIcon, PencilSquareIcon, PlusIcon, TagIcon, TrashIcon 
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
+import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
 
 const Tags: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -155,11 +155,14 @@ const Tags: React.FC = () => {
       <LargeTitleHeader
         title="Tags"
         action={
-          <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
-            New
-          </Button>
+          <span className="hidden md:inline-block">
+            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+              New
+            </Button>
+          </span>
         }
       />
+      <CreateFAB label="Add tag" onClick={() => handleOpenModal()} />
 
       <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search tags" />
 
@@ -243,7 +246,7 @@ const Tags: React.FC = () => {
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Tag Name *" required>
+          <FormField label="Tag Name" required>
             <Input
               type="text"
               required
@@ -284,7 +287,7 @@ const Tags: React.FC = () => {
                   key={color}
                   type="button"
                   onClick={() => setFormData({ ...formData, color })}
-                  className={`w-full aspect-square rounded-lg transition ${
+                  className={`min-h-touch min-w-touch w-full aspect-square rounded-lg transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 ${
                     formData.color === color ? 'ring-2 ring-offset-2 ring-gray-400' : ''
                   }`}
                   style={{ backgroundColor: color }}
@@ -336,7 +339,7 @@ const Tags: React.FC = () => {
               setShowActions(false);
               handleOpenModal(selectedTag);
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <PencilSquareIcon className="h-5 w-5 text-gray-500" />
@@ -351,7 +354,7 @@ const Tags: React.FC = () => {
               setShowActions(false);
               handleDelete(id);
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <TrashIcon className="h-5 w-5 text-error-500" />

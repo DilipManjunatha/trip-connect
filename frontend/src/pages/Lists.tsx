@@ -5,7 +5,7 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, CheckIcon, QueueListIcon } from 
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
+import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const Lists: React.FC = () => {
   const [lists, setLists] = useState<List[]>([]);
@@ -157,11 +157,14 @@ const Lists: React.FC = () => {
       <LargeTitleHeader
         title="Smart Lists"
         action={
-          <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
-            New
-          </Button>
+          <span className="hidden md:inline-block">
+            <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+              New
+            </Button>
+          </span>
         }
       />
+      <CreateFAB label="Add list" onClick={() => handleOpenModal()} />
 
       <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search lists" />
 
@@ -256,7 +259,7 @@ const Lists: React.FC = () => {
 
       {/* Desktop: keep existing 2-pane layout */}
       <div className="hidden lg:grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lists Sidebar */}
+        {/* Smart Lists Sidebar */}
         <div className="space-y-2">
           {filteredLists.length > 0 ? (
             filteredLists.map((list) => (
@@ -394,7 +397,7 @@ const Lists: React.FC = () => {
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="List Name *" required>
+          <FormField label="List Name" required>
             <Input
               type="text"
               required
@@ -481,7 +484,7 @@ const Lists: React.FC = () => {
               closeActions();
               handleOpenModal(selectedList);
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <PencilSquareIcon className="h-5 w-5 text-gray-500" />
@@ -496,7 +499,7 @@ const Lists: React.FC = () => {
               closeActions();
               handleDelete(id);
             }}
-            className="w-full rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50"
+            className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-semibold text-error-600 active:bg-gray-50 flex items-center"
           >
             <span className="inline-flex items-center gap-2">
               <TrashIcon className="h-5 w-5 text-error-500" />

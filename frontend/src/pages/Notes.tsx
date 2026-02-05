@@ -10,7 +10,7 @@ import { Note } from '../types';
 import { DocumentTextIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
-import { Button, LargeTitleHeader, SearchField, GroupedList, ListRow } from '../components/ui';
+import { Button, CreateFAB, LargeTitleHeader, SearchField, GroupedList, ListRow } from '../components/ui';
 import { noteDetail } from '../ux';
 
 const PREVIEW_LENGTH = 60;
@@ -92,11 +92,14 @@ const Notes: React.FC = () => {
       <LargeTitleHeader
         title="Notes"
         action={
-          <Button onClick={() => navigate(noteDetail('new'))} leftIcon={<DocumentTextIcon className="h-5 w-5" />}>
-            New
-          </Button>
+          <span className="hidden md:inline-block">
+            <Button onClick={() => navigate(noteDetail('new'))} leftIcon={<DocumentTextIcon className="h-5 w-5" />}>
+              New
+            </Button>
+          </span>
         }
       />
+      <CreateFAB label="Add note" onClick={() => navigate(noteDetail('new'))} />
       <SearchField
         value={searchTerm}
         onChange={setSearchTerm}

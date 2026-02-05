@@ -174,8 +174,8 @@ const Messages: React.FC<MessagesProps> = ({ groupId: groupIdProp, tripName }) =
   if (!isScopedToTrip && groups.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">No trip groups found</p>
-        <p className="text-gray-400 text-sm mt-2">Create a trip group to start messaging</p>
+        <p className="text-gray-500 text-lg">No trips found</p>
+        <p className="text-gray-400 text-sm mt-2">Create a trip to start messaging</p>
       </div>
     );
   }
@@ -189,7 +189,7 @@ const Messages: React.FC<MessagesProps> = ({ groupId: groupIdProp, tripName }) =
         {!isScopedToTrip && (
           <button
             onClick={() => setSelectedGroupId(null)}
-            className="lg:hidden text-gray-600 hover:text-gray-900"
+            className="lg:hidden flex items-center justify-center min-h-touch min-w-touch text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded-lg"
             aria-label="Back to group list"
           >
             <ArrowLeftIcon className="h-5 w-5" />
@@ -226,7 +226,7 @@ const Messages: React.FC<MessagesProps> = ({ groupId: groupIdProp, tripName }) =
                     {isOwnMessage && (
                       <button
                         onClick={() => handleDeleteMessage(message.id)}
-                        className="absolute -right-8 top-0 opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700 transition"
+                        className="absolute -right-8 top-0 flex items-center justify-center min-h-touch min-w-touch opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700 transition focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded-lg"
                         aria-label="Delete message"
                       >
                         <TrashIcon className="h-4 w-4" />
@@ -259,7 +259,7 @@ const Messages: React.FC<MessagesProps> = ({ groupId: groupIdProp, tripName }) =
         <button
           type="submit"
           disabled={!newMessage.trim() || sending}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition inline-flex items-center gap-2"
+          className="min-h-touch min-w-touch px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition inline-flex items-center justify-center gap-2"
         >
           <PaperAirplaneIcon className="h-5 w-5" />
           <span className="hidden sm:inline">Send</span>

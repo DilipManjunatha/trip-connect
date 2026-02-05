@@ -6,12 +6,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, SparklesIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { Button } from '../components/ui';
 import SmartCard from '../components/SmartCard';
 import { groupTickets } from '../ux/routes';
+import { getUploadUrl, openAttachment } from '../utils/uploadUrl';
 import type { Ticket } from '../types';
 
 const TicketCardView: React.FC = () => {
@@ -110,17 +111,44 @@ const TicketCardView: React.FC = () => {
         />
       </div>
 
-      {ticket.ocrStatus !== 'COMPLETED' && ticket.ocrStatus !== 'PENDING' && (
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<SparklesIcon className="h-4 w-4" />}
-            onClick={handleProcessOcr}
-            disabled={processingOcr}
-          >
-            {processingOcr ? 'Processing…' : 'Run OCR'}
-          </Button>
+      {(ticket.filePath || ticket.fileName) && (
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<ArrowTopRightOnSquareIcon className="h-4 w-4" />}
+              onClick={async () => {
+                const url = getUploadUrl(ticket.filePath);
+                if (!url) return;
+                try {
+                  await openAttachment(url, ticket.fileName);
+                } catch {
+                  toast.error('Failed to open file');
+                }
+              }}
+              title="Open attachment (works offline after first open)"
+            >
+              Open file{ticket.fileName ? `: ${ticket.fileName}` : ''}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<SparklesIcon className="h-4 w-4" />}
+              onClick={handleProcessOcr}
+              disabled={processingOcr}
+              title={ticket.ocrStatus === 'COMPLETED' ? 'Re-run OCR if data is wrong' : 'Extract text from ticket file'}
+            >
+              {processingOcr
+                ? 'Processing…'
+                : ticket.ocrStatus === 'COMPLETED'
+                  ? 'Re-run OCR'
+                  : 'Run OCR'}
+            </Button>
+          </div>
+          {ticket.ocrStatus === 'COMPLETED' && !processingOcr && (
+            <p className="text-xs text-gray-500">Data wrong? Re-run to re-scan the file.</p>
+          )}
         </div>
       )}
     </div>

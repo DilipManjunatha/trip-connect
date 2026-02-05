@@ -401,7 +401,7 @@ const Users: React.FC = () => {
                       {user._count && (
                         <>
                           <div>{user._count.contacts} contacts</div>
-                          <div>{user._count.tripGroups} groups</div>
+                          <div>{user._count.tripGroups} trips</div>
                           <div>{user._count.messages} messages</div>
                         </>
                       )}
