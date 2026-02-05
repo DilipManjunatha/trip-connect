@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { Card, Text, Button, Chip, Avatar, List, Portal, Modal, Searchbar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { apiService } from '../../services/api';
-import { RootStackParamList, Contact } from '../../types';
+import { RootStackParamList } from '../../types';
 import { theme } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { isAdmin } from '../../utils/roles';
+import ActionSheet from '../../components/apple/ActionSheet';
 
 type GroupDetailScreenRouteProp = RouteProp<RootStackParamList, 'GroupDetail'>;
 type GroupDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'GroupDetail'>;
@@ -22,14 +24,18 @@ const statusColors: Record<string, string> = {
   CANCELLED: '#EF4444',
 };
 
+const MIN_TOUCH = 44;
+
 const GroupDetailScreen: React.FC = () => {
   const route = useRoute<GroupDetailScreenRouteProp>();
   const navigation = useNavigation<GroupDetailScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { groupId } = route.params;
   const queryClient = useQueryClient();
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
 
@@ -77,7 +83,7 @@ const GroupDetailScreen: React.FC = () => {
   });
 
   const handleDeleteGroup = () => {
-    Alert.alert('Delete Group', 'Are you sure you want to delete this trip group?', [
+    Alert.alert('Delete Trip', 'Are you sure you want to delete this trip?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -130,10 +136,18 @@ const GroupDetailScreen: React.FC = () => {
     );
   }
 
+  const stripBottom = insets.bottom + 16;
+  const stripHeight = 72;
+  const scrollPaddingBottom = stripHeight + stripBottom + 16;
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Header Card */}
-      <Card style={styles.card}>
+    <View style={styles.wrapper}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: scrollPaddingBottom }}
+      >
+        {/* Header Card */}
+        <Card style={styles.card}>
         <Card.Content>
           <View style={styles.header}>
             <Text style={styles.groupName}>{group.name}</Text>
@@ -221,54 +235,46 @@ const GroupDetailScreen: React.FC = () => {
           })}
         </Card.Content>
       </Card>
+      </ScrollView>
 
-      {/* Action Buttons */}
-      <View style={styles.actions}>
-        <Button
-          mode="contained"
-          icon="message"
-          onPress={() => navigation.navigate('Messages', { groupId })}
-          style={styles.actionButton}
+      {/* Thumb-zone action strip: primary actions + More (Option A) */}
+      <View style={[styles.actionStrip, { bottom: stripBottom, paddingRight: 16 + insets.right }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.actionStripContent}
         >
-          Messages
-        </Button>
-        <Button
-          mode="outlined"
-          icon="calendar-clock"
-          onPress={() => navigation.navigate('Itinerary', { groupId })}
-          style={styles.actionButton}
-        >
-          Itinerary
-        </Button>
-        <Button
-          mode="outlined"
-          icon="cash"
-          onPress={() => navigation.navigate('Expenses', { groupId })}
-          style={styles.actionButton}
-        >
-          Expenses
-        </Button>
-        {isAdmin(user) && (
-          <>
-            <Button
-              mode="outlined"
-              icon="pencil"
-              onPress={() => navigation.navigate('GroupForm', { groupId })}
-              style={styles.actionButton}
+          <Pressable
+            onPress={() => navigation.navigate('Messages', { groupId })}
+            style={({ pressed }) => [styles.stripButton, styles.stripButtonPrimary, pressed && styles.pressed]}
+          >
+            <Icon name="message" size={22} color="#fff" />
+            <Text style={styles.stripButtonLabelPrimary}>Messages</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('Itinerary', { groupId })}
+            style={({ pressed }) => [styles.stripButton, pressed && styles.pressed]}
+          >
+            <Icon name="calendar-clock" size={22} color={theme.colors.primary} />
+            <Text style={styles.stripButtonLabel}>Itinerary</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('Expenses', { groupId })}
+            style={({ pressed }) => [styles.stripButton, pressed && styles.pressed]}
+          >
+            <Icon name="cash" size={22} color={theme.colors.primary} />
+            <Text style={styles.stripButtonLabel}>Expenses</Text>
+          </Pressable>
+          {isAdmin(user) && (
+            <Pressable
+              onPress={() => setShowMoreSheet(true)}
+              style={({ pressed }) => [styles.stripButton, pressed && styles.pressed]}
             >
-              Edit Group
-            </Button>
-            <Button
-              mode="outlined"
-              icon="delete"
-              textColor="#EF4444"
-              onPress={handleDeleteGroup}
-              style={[styles.actionButton, styles.deleteButton]}
-            >
-              Delete Group
-            </Button>
-          </>
-        )}
+              <Icon name="dots-horizontal" size={22} color="#6B7280" />
+              <Text style={[styles.stripButtonLabel, { color: '#6B7280' }]}>More</Text>
+            </Pressable>
+          )}
+        </ScrollView>
       </View>
 
       {/* Add Members Modal */}
@@ -329,14 +335,40 @@ const GroupDetailScreen: React.FC = () => {
           </View>
         </Modal>
       </Portal>
-    </ScrollView>
+
+      <ActionSheet visible={showMoreSheet} onClose={() => setShowMoreSheet(false)} title="Trip actions">
+        <Pressable
+          onPress={() => {
+            setShowMoreSheet(false);
+            navigation.navigate('GroupForm', { groupId });
+          }}
+          style={({ pressed }) => [styles.sheetItem, pressed && styles.sheetItemPressed]}
+        >
+          <Icon name="pencil" size={22} color="#374151" />
+          <Text style={styles.sheetItemText}>Edit Group</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            setShowMoreSheet(false);
+            handleDeleteGroup();
+          }}
+          style={({ pressed }) => [styles.sheetItem, styles.sheetItemDanger, pressed && styles.sheetItemPressed]}
+        >
+          <Icon name="delete" size={22} color="#EF4444" />
+          <Text style={styles.sheetItemTextDanger}>Delete Group</Text>
+        </Pressable>
+      </ActionSheet>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
     backgroundColor: '#F3F4F6',
+  },
+  container: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -401,14 +433,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  actions: {
-    padding: 16,
+  actionStrip: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+    minHeight: MIN_TOUCH + 28,
   },
-  actionButton: {
-    marginBottom: 12,
+  actionStripContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingRight: 16,
   },
-  deleteButton: {
-    borderColor: '#EF4444',
+  stripButton: {
+    minWidth: MIN_TOUCH,
+    minHeight: MIN_TOUCH,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    backgroundColor: '#fff',
+  },
+  stripButtonPrimary: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  stripButtonLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    marginTop: 4,
+  },
+  stripButtonLabelPrimary: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 4,
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  sheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+    minHeight: MIN_TOUCH,
+  },
+  sheetItemPressed: {
+    backgroundColor: '#F3F4F6',
+  },
+  sheetItemDanger: {},
+  sheetItemText: {
+    fontSize: 17,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  sheetItemTextDanger: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#EF4444',
   },
   modal: {
     backgroundColor: 'white',

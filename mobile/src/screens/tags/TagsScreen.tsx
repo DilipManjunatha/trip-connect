@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Text, FAB } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -15,6 +16,7 @@ type TagsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Tags'>;
 
 const TagsScreen: React.FC = () => {
   const navigation = useNavigation<TagsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const { data: tags = [], isLoading, refetch, error } = useQuery({
@@ -86,7 +88,7 @@ const TagsScreen: React.FC = () => {
       </GroupedList>
       <FAB
         icon="plus"
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 16, right: insets.right + 16 }]}
         onPress={() => navigation.navigate('TagForm', {})}
       />
     </View>
@@ -108,9 +110,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
   },
   emptyContainer: {
     padding: 32,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Card, Text, Button, Portal, Modal, TextInput, FAB } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,6 +15,7 @@ type ItineraryScreenRouteProp = RouteProp<RootStackParamList, 'Itinerary'>;
 const ItineraryScreen: React.FC = () => {
   const route = useRoute<ItineraryScreenRouteProp>();
   const { groupId } = route.params;
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
   const [showModal, setShowModal] = useState(false);
@@ -208,7 +210,7 @@ const ItineraryScreen: React.FC = () => {
 
       <FAB
         icon="plus"
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 16, right: insets.right + 16 }]}
         onPress={() => handleOpenModal()}
         color="#fff"
       />
@@ -396,9 +398,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
     backgroundColor: theme.colors.primary,
   },
   modal: {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
@@ -17,15 +18,17 @@ const queryClient = new QueryClient({
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <PaperProvider theme={theme}>
-        <AuthProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </AuthProvider>
-      </PaperProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <PaperProvider theme={theme}>
+          <AuthProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </AuthProvider>
+        </PaperProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 };
 

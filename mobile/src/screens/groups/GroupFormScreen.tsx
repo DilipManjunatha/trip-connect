@@ -169,7 +169,7 @@ const GroupFormScreen: React.FC = () => {
             disabled={isLoading}
             style={styles.button}
           >
-            {isEditing ? 'Update Group' : 'Create Group'}
+            {isEditing ? 'Update Trip' : 'Create Trips'}
           </Button>
         </View>
       </ScrollView>

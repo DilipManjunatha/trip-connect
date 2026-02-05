@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Text, Chip, FAB } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -25,6 +26,7 @@ const statusColors: Record<string, string> = {
 
 const GroupsScreen: React.FC = () => {
   const navigation = useNavigation<GroupsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = React.useState('');
 
@@ -49,14 +51,14 @@ const GroupsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <LargeTitleHeader title="Trip Groups" />
+      <LargeTitleHeader title="Trips" />
       <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search groups" />
 
       {filteredGroups.length === 0 && !isLoading ? (
         <View style={styles.emptyState}>
           <Icon name="airplane-off" size={64} color="#9CA3AF" />
-          <Text style={styles.emptyText}>No trip groups found</Text>
-          <Text style={styles.emptySubtext}>Create your first trip group to get started</Text>
+          <Text style={styles.emptyText}>No trips found</Text>
+          <Text style={styles.emptySubtext}>Create your first trip to get started</Text>
         </View>
       ) : (
         <GroupedList>
@@ -96,7 +98,7 @@ const GroupsScreen: React.FC = () => {
       {isAdmin(user) && (
         <FAB
           icon="plus"
-          style={styles.fab}
+          style={[styles.fab, { bottom: insets.bottom + 16, right: insets.right + 16 }]}
           onPress={() => navigation.navigate('GroupForm', {})}
           color="#fff"
         />
@@ -150,9 +152,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
     backgroundColor: theme.colors.primary,
   },
 });

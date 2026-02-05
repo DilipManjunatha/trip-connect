@@ -61,7 +61,7 @@ const GroupsStack = () => (
     <Stack.Screen
       name="Groups"
       component={GroupsScreen}
-      options={{ title: 'Trip Groups' }}
+      options={{ title: 'Trips' }}
     />
     <Stack.Screen
       name="GroupDetail"
@@ -71,7 +71,7 @@ const GroupsStack = () => (
     <Stack.Screen
       name="GroupForm"
       component={GroupFormScreen}
-      options={{ title: 'Trip Group' }}
+      options={{ title: 'Trip' }}
     />
     <Stack.Screen
       name="Messages"
@@ -96,7 +96,7 @@ const ListsStack = () => (
     <Stack.Screen
       name="Lists"
       component={ListsScreen}
-      options={{ title: 'Lists' }}
+      options={{ title: 'Smart Lists' }}
     />
     <Stack.Screen
       name="ListDetail"
@@ -185,7 +185,7 @@ const MainNavigator: React.FC = () => {
             name="ListsTab"
             component={ListsStack}
             options={{
-              title: 'Lists',
+              title: 'Smart Lists',
               tabBarIcon: ({ color, size }) => (
                 <Icon name="format-list-bulleted" size={size} color={color} />
               ),

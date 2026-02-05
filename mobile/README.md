@@ -24,14 +24,14 @@ Android mobile application for TripConnect - Contact & Group Management System.
    - Tag name and optional value support
    - Color-coded tag display
 
-4. **Lists Management**
-   - View all lists (automatic and manual)
+4. **Smart Lists**
+   - View all smart lists (automatic and manual)
    - List details with member contacts
-   - Automatic lists based on tags
+   - Automatic smart lists based on tags
 
-5. **Trip Groups**
-   - View all trip groups
-   - Create and edit trip groups
+5. **Trips**
+   - View all trips
+   - Create and edit trips
    - Group details with members, dates, budget
    - Status tracking (Planning, Confirmed, Ongoing, Completed, Cancelled)
    - Member roles (Organizer, Co-Organizer, Member, Volunteer)
@@ -43,11 +43,11 @@ Android mobile application for TripConnect - Contact & Group Management System.
    - Send and receive messages instantly
 
 7. **Itinerary Management**
-   - View itinerary items for trip groups
+   - View itinerary items for trips
    - Display time, location, and cost information
 
 8. **Expense Tracking**
-   - View expenses for trip groups
+   - View expenses for trips
    - Total expense summary
    - Expense details with category, date, and split type
 
@@ -91,7 +91,7 @@ mobile/
 │       ├── contacts/          # Contact management
 │       ├── tags/              # Tag management
 │       ├── lists/             # List management
-│       ├── groups/            # Trip group management
+│       ├── groups/            # Trip management
 │       └── messages/          # Messaging
 ├── package.json
 ├── tsconfig.json
@@ -200,7 +200,7 @@ const WS_URL = process.env.WS_URL || 'http://localhost:5000';
 
 ### Navigation Structure
 
-- **Bottom Tabs**: Home, Contacts, Groups, Lists, Tags
+- **Bottom Tabs**: Home, Contacts, Groups, Smart Lists, Tags
 - **Stack Navigation**: Nested navigation for detail screens
 - **Auth Stack**: Separate navigation for login/register
 
@@ -216,8 +216,8 @@ The app integrates with the TripConnect backend API:
 - `PUT /api/contacts/:id` - Update contact
 - `DELETE /api/contacts/:id` - Delete contact
 - `GET /api/tags` - List tags
-- `GET /api/lists` - List lists
-- `GET /api/groups` - List trip groups
+- `GET /api/lists` - List smart lists
+- `GET /api/groups` - List trips
 - `GET /api/messages` - Get messages
 - `POST /api/messages` - Send message
 

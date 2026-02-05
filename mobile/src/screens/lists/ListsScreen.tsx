@@ -31,7 +31,7 @@ const ListsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <LargeTitleHeader title="Lists" />
+      <LargeTitleHeader title="Smart Lists" />
 
       <GroupedList>
         <FlatList
@@ -62,7 +62,7 @@ const ListsScreen: React.FC = () => {
               <EmptyState
                 icon={<Icon name="format-list-bulleted" size={64} color="#9CA3AF" />}
                 title="No lists yet"
-                description="Lists are automatically created when you create tags and assign them to contacts. Start by creating some tags!"
+                description="Smart lists are automatically created when you create tags and assign them to contacts. Start by creating some tags!"
                 actionButton={{
                   label: "Go to Tags",
                   onPress: () => navigation.navigate('Tags')

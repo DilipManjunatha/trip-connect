@@ -118,7 +118,7 @@ const UserDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       {user._count ? (
         <GroupedList title="Activity">
           <ListRow title="Contacts" subtitle={`${user._count.contacts}`} showChevron={false} isLast={false} />
-          <ListRow title="Groups" subtitle={`${user._count.tripGroups}`} showChevron={false} isLast={false} />
+          <ListRow title="Trips" subtitle={`${user._count.tripGroups}`} showChevron={false} isLast={false} />
           <ListRow title="Messages" subtitle={`${user._count.messages}`} showChevron={false} isLast={false} />
           <ListRow title="Memberships" subtitle={`${user._count.groupMembers}`} showChevron={false} isLast />
         </GroupedList>

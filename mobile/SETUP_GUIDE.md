@@ -220,7 +220,7 @@ npm run lint
 1. **Test Authentication**: Try logging in with existing credentials
 2. **Create Contacts**: Add some test contacts
 3. **Create Tags**: Set up tags for organization
-4. **Create Groups**: Set up a trip group
+4. **Create Trips**: Set up a trip
 5. **Test Messaging**: Send messages in a group
 6. **Explore Features**: Navigate through all screens
 
