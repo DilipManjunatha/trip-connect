@@ -40,56 +40,46 @@ for (const envVar of requiredEnvVars) {
 const app = express();
 const server = createServer(app);
 
-// CORS origin validation function
+// CORS: allowed origins list (used when origin must be in a fixed list)
 const getAllowedOrigins = (): string[] => {
-  const origins: string[] = [];
-  
-  // Add localhost origins (common development ports)
-  origins.push('http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173');
-  
-  // Add origins from FRONTEND_URL (supports comma-separated list)
+  const origins: string[] = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'http://127.0.0.1:5175',
+    'http://127.0.0.1:8080',
+  ];
   if (process.env.FRONTEND_URL) {
-    const frontendUrls = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+    const frontendUrls = process.env.FRONTEND_URL.split(',').map((url) => url.trim()).filter(Boolean);
     origins.push(...frontendUrls);
   }
-  
-  // In development, allow common network IP patterns
-  if (process.env.NODE_ENV === 'development') {
-    // Allow any local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-    // This will be handled by the origin function below
-  }
-  
   return origins;
 };
 
-// CORS origin validation function
+// CORS origin validation: allow request origin or reject
 const corsOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-  // Allow requests with no origin (like mobile apps, Postman, etc.)
+  // No origin (same-origin, Postman, mobile apps, etc.)
   if (!origin) {
     return callback(null, true);
   }
-  
-  const allowedOrigins = getAllowedOrigins();
-  
-  // Check if origin is in allowed list
-  if (allowedOrigins.includes(origin)) {
+  if (getAllowedOrigins().includes(origin)) {
     return callback(null, true);
   }
-  
-  // When not in production, allow localhost (any port) and local network IPs (for mobile web / different dev ports)
+  // Development: allow any localhost/127.0.0.1 port and local network IPs
   if (process.env.NODE_ENV !== 'production') {
-    // Allow localhost variants (any port - Vite may use 5173, 5174, etc.)
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
-    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) with any port
-    const localNetworkPattern = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
-    if (localNetworkPattern.test(origin)) {
+    const localNetworkRegex = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+    if (localNetworkRegex.test(origin)) {
       return callback(null, true);
     }
   }
-  
-  // Reject origin (use false so CORS middleware can respond without throwing)
   callback(null, false);
 };
 
@@ -117,8 +107,9 @@ app.use(cors({
     corsOrigin(origin, callback);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin'],
+  optionsSuccessStatus: 200, // some clients expect 200 for preflight
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

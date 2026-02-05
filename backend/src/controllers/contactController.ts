@@ -412,11 +412,13 @@ export const contactValidation = [
     .isLength({ min: 1 })
     .withMessage('Last name is required'),
   body('email')
-    .optional()
+    .optional({ values: 'falsy' })
+    .trim()
     .isEmail()
     .withMessage('Please provide a valid email'),
   body('phone')
-    .optional()
+    .optional({ values: 'falsy' })
+    .trim()
     .isLength({ min: 10 })
     .withMessage('Phone number must be at least 10 characters'),
   body('tagIds')
