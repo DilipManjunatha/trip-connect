@@ -14,7 +14,7 @@ Use this spec as the single source of truth for UI/UX implementation, design rev
 | Item | Requirement |
 |------|-------------|
 | **Product name** | Trip Connect |
-| **Positioning** | Mobile-first trip planning and contact management: contacts, smart lists, trip groups, expense splitting, itinerary, and notes in one cohesive experience. |
+| **Positioning** | Mobile-first trip planning and contact management: contacts, smart lists, trips, expense splitting, itinerary, and notes in one cohesive experience. |
 | **Platform** | Mobile-first; must work as a responsive desktop web experience. Prefer **PWA** for installability, offline capability, and push; **SPA** acceptable if PWA is not feasible. |
 | **Quality bar** | Production-grade UI/UX: clear hierarchy, consistent patterns, accessible, performant, ready for real users. |
 | **AI readiness** | Architecture and data model must support future AI features (expense analysis, itinerary suggestions, smart categorization). Expose structured data and extension points. |
@@ -50,7 +50,7 @@ Use this spec as the single source of truth for UI/UX implementation, design rev
 ### 3.2 Access Control
 
 - **ProtectedRoute:** All app content requires authentication; redirect to login with return URL.
-- **Admin-only (retained):** Contacts, Tags, Lists, and Users remain **admin-only**. Only ADMIN role can access these pages. No change to route protection for these surfaces.
+- **Admin-only (retained):** Contacts, Tags, Smart Lists, and Users remain **admin-only**. Only ADMIN role can access these pages. No change to route protection for these surfaces.
 
 ### 3.3 Layout Variants
 
@@ -128,6 +128,7 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 - Shows trip name (and optional dates) in header or breadcrumb.
 - Sub-navigation: Overview (or first tab), Expenses, Itinerary, Kanban, Tickets, Chat.
 - Uses TripContext or `useTripFromRoute()` for trip data.
+- **Mobile (below md):** Sub-navigation moves to the thumb zone: a **trip bottom bar** replaces the main app bottom nav while the user is inside a trip. The bar shows Overview, Expenses, Itinerary, and a “More” item. Tapping “More” opens a bottom sheet (ActionSheet) with Tasks (Kanban), Tickets, and Chat; each navigates to the correct route. The sticky top bar (back button + trip name) remains; the horizontal tabs at the top of the content are hidden when the trip bottom bar is shown.
 
 ---
 
@@ -171,7 +172,7 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 
 ### 6.7 Trip: Chat
 
-- **In-trip chat:** Messaging per trip group; message list and composer; real-time updates (e.g. Socket.io). Optional: global `/messages` that lists trips and opens trip chat.
+- **In-trip chat:** Messaging per trip; message list and composer; real-time updates (e.g. Socket.io). Optional: global `/messages` that lists trips and opens trip chat.
 
 ### 6.8 Notes (Standalone)
 
@@ -250,6 +251,12 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 - Sidebar visible from `md` up; bottom bar only below `md`.
 - Multi-column or context panel from `lg` where appropriate.
 
+### 8.5 Thumb zone (mobile)
+
+- **Primary actions** should sit in the bottom third or in a bottom bar on mobile where possible so they fall in the thumb-reachable area.
+- **Back and secondary actions** at the top are acceptable provided their touch targets are at least 44×44px.
+- **Trip sub-navigation** on mobile can be a bottom bar or large top tabs; ensure all targets meet the minimum touch size.
+
 ---
 
 ## 9. Accessibility
@@ -280,7 +287,7 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 ## 11. Data Model & API Alignment
 
 - **Contacts ↔ Tags ↔ Smart lists:** Tags drive smart lists; allow direct add/remove on smart list. API already supports lists and list members.
-- **Trips:** Trip group → participants, messages, expenses (with categories), itinerary. Add: tickets (with files and OCR result), Kanban board. API: `/api/groups/:groupId/expenses`, `/api/groups/:groupId/itineraries`; add tickets and Kanban as needed.
+- **Trips:** Trip → participants, messages, expenses (with categories), itinerary. Add: tickets (with files and OCR result), Kanban board. API: `/api/groups/:groupId/expenses`, `/api/groups/:groupId/itineraries`; add tickets and Kanban as needed.
 - **Notes:** Standalone entity with reminder/follow-up fields; add Note model and CRUD if not present.
 - **Calendar:** Derived from trip dates (and optionally note reminders); no new backend entity; aggregate from groups (and notes).
 

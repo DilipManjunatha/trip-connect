@@ -107,7 +107,7 @@ This document describes the comprehensive Role-Based Access Control (RBAC) syste
 - All USER permissions, plus:
   - Contacts management (full CRUD)
   - Tags management (full CRUD)
-  - Lists management (full CRUD)
+  - Smart Lists management (full CRUD)
   - User management (view, edit, delete, role changes)
   - Group management (all groups, not just own)
 
@@ -206,7 +206,7 @@ await apiService.deleteUser(userId);
 3. **Cascade Deletion**
    - When a user is deleted, all related data is removed:
      - Contacts created by user
-     - Trip groups created by user
+     - Trips created by user
      - Messages sent by user
      - Group memberships
 

@@ -267,16 +267,16 @@ npm run android
 1. **Login/Register** - Authentication works
 2. **Dashboard** - Shows welcome message
 3. **Navigation** - Sidebar/menu navigation
-4. **Placeholder Pages** - Contacts, Tags, Lists, Groups, Messages (may show "coming soon")
+4. **Placeholder Pages** - Contacts, Tags, Smart Lists, Groups, Messages (may show "coming soon")
 
 ### Mobile Application Features to Test:
 1. **Login/Register** - Authentication works
 2. **Dashboard** - Shows statistics and user profile
-3. **Bottom Navigation** - 5 tabs (Home, Contacts, Groups, Lists, Tags)
+3. **Bottom Navigation** - 5 tabs (Home, Contacts, Groups, Smart Lists, Tags)
 4. **Contacts** - View, create, edit contacts
 5. **Tags** - View and manage tags
-6. **Lists** - View automatic and manual lists
-7. **Groups** - View and manage trip groups
+6. **Smart Lists** - View automatic and manual contact groupings
+7. **Groups** - View and manage trips
 8. **Messaging** - Real-time chat in groups
 9. **Itinerary** - View trip itinerary
 10. **Expenses** - View group expenses
@@ -371,7 +371,7 @@ npm run android
 2. **Register Screen** - Registration form
 3. **Dashboard** - User profile, statistics cards
 4. **Contacts** - List of contacts with search
-5. **Groups** - Trip groups with status badges
+5. **Groups** - Trips with status badges
 6. **Messages** - Real-time chat interface
 7. **Bottom Tabs** - 5 navigation tabs
 

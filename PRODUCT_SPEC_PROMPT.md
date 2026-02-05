@@ -7,7 +7,7 @@
 ## 1. Product Vision & Constraints
 
 - **Product name:** Trip Connect  
-- **Positioning:** A mobile-first trip planning and contact management application that combines contacts, smart lists, trip groups, expense splitting, itinerary planning, and notes in one cohesive experience.  
+- **Positioning:** A mobile-first trip planning and contact management application that combines contacts, smart lists, trips, expense splitting, itinerary planning, and notes in one cohesive experience.  
 - **Platform:** Mobile-first; must work as a responsive desktop web experience. Prefer **PWA** for installability, offline capability, and push; **SPA** is acceptable if PWA is not feasible.  
 - **Quality bar:** Production-grade UI/UX: clear hierarchy, consistent patterns, accessible, performant, and ready for real users.  
 - **AI readiness:** Architecture and data model must make it straightforward to add AI features later (e.g., expense analysis, itinerary suggestions, smart categorization). Expose clear extension points and structured data (categories, amounts, dates, participants) for AI consumption.
@@ -27,13 +27,13 @@
 - **Edit smart lists directly:** User can open a smart list and add or remove contacts from it (e.g., add a contact to a list without necessarily editing the contact’s tags first). This keeps smart lists in sync with tags where appropriate and gives flexibility.  
 - **Summary:** Contacts + tags drive smart lists; smart lists are both auto-generated and directly editable.
 
-### 2.2 Trip Planning (Trip Groups)
+### 2.2 Trip Planning (Trips)
 
-Each **trip group** is a container for one trip and includes:
+Each **trip** is a container for one trip and includes:
 
-- **Create trip group:** User can create a new trip group (name, dates, optional description).  
-- **Messaging:** In-app messaging per trip group so participants can discuss the trip.  
-- **Participants:** Add participants from the user’s contacts (and/or by invite). Participants are members of the trip group.  
+- **Create trip:** User can create a new trip (name, dates, optional description).  
+- **Messaging:** In-app messaging per trip so participants can discuss the trip.  
+- **Participants:** Add participants from the user’s contacts (and/or by invite). Participants are members of the trip.  
 - **Expenses:**  
   - Create, edit, and delete expenses for the trip.  
   - **Sophisticated expense management:** Support multiple expenses per trip with amount, currency, payer, date, and optional description.  
@@ -42,7 +42,7 @@ Each **trip group** is a container for one trip and includes:
   - **OCR & smart info cards:**  
     - System supports **OCR** (or integration with an OCR service) on ticket files to extract key details (flight number, seat, time, PNR, etc.).  
     - From this data, generate **smart info cards**: compact, scannable cards showing the most important information (carrier, time, seat, gate, etc.).  
-    - **During the trip:** Any participant in the trip group can **view these cards** (own and others’) quickly—no need to open the original file. Use case: “What’s your seat?” → open card, see seat and flight details. Works for flights, trains, accommodation, etc.  
+    - **During the trip:** Any participant in the trip can **view these cards** (own and others’) quickly—no need to open the original file. Use case: “What’s your seat?” → open card, see seat and flight details. Works for flights, trains, accommodation, etc.  
   - **Split functionality:** A **sophisticated split** feature so expenses can be split among participants (equal, custom %, or by share). Clear view of who owes whom and settlement status.  
 - **Itinerary:**  
   - **Detailed itinerary** per trip: list of destinations/activities with order, dates/times, and optional location.  
@@ -102,12 +102,12 @@ Each **trip group** is a container for one trip and includes:
 ## 5. Technical Guidance (for Implementation)
 
 - **Auth:** Secure auth; only authenticated users access contacts, trips, and notes.  
-- **Trip membership:** Respect trip group membership for messaging, expenses, itinerary, and smart card visibility.  
+- **Trip membership:** Respect trip membership for messaging, expenses, itinerary, and smart card visibility.  
 - **Offline / PWA:** If PWA is chosen, consider caching key data (e.g., current trip, smart cards) for offline viewing.  
 - **Performance:** Lazy-load heavy views (e.g., flowchart, calendar); keep list and card views fast on mobile.  
 - **Data model:**  
   - Contacts ↔ Tags ↔ Smart lists: tags drive smart lists; allow direct add/remove on smart list.  
-  - Trips: trip group → participants, messages, expenses (with categories), tickets (with files and OCR result), itinerary (stops with order and location), Kanban board.  
+  - Trips: trip → participants, messages, expenses (with categories), tickets (with files and OCR result), itinerary (stops with order and location), Kanban board.  
   - Notes: standalone entity with reminder/follow-up fields.  
   - Calendar: derived from trip dates (and optionally note reminders if desired).
 
@@ -115,7 +115,7 @@ Each **trip group** is a container for one trip and includes:
 
 ## 6. One-Paragraph Summary (for quick briefs)
 
-Trip Connect is a **mobile-first** (PWA or SPA) app for **contacts** (with tags and auto + editable **smart lists**), **trip groups** (messaging, **participants from contacts**, **sophisticated expenses** with categories, **tickets** and **ticket files**, **OCR → smart info cards** for quick viewing by any participant, **sophisticated split**), **detailed itinerary** (**timeline** and **flowchart/map** views, locations per stop), **trip Kanban** for to-dos, and a **calendar** view of planned trips. It also has **standalone Notes** with reminders and follow-up. UI/UX must be **production-grade**, **mobile-first** and desktop-responsive, and **AI-ready** (structured data and extension points for expense analysis and itinerary assistance).
+Trip Connect is a **mobile-first** (PWA or SPA) app for **contacts** (with tags and auto + editable **smart lists**), **trips** (messaging, **participants from contacts**, **sophisticated expenses** with categories, **tickets** and **ticket files**, **OCR → smart info cards** for quick viewing by any participant, **sophisticated split**), **detailed itinerary** (**timeline** and **flowchart/map** views, locations per stop), **trip Kanban** for to-dos, and a **calendar** view of planned trips. It also has **standalone Notes** with reminders and follow-up. UI/UX must be **production-grade**, **mobile-first** and desktop-responsive, and **AI-ready** (structured data and extension points for expense analysis and itinerary assistance).
 
 ---
 

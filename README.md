@@ -1,15 +1,15 @@
 # TripConnect - Contact & Group Management System
 
-A comprehensive full-stack application for organizing contacts, creating trip groups, and managing volunteers. Built with modern web technologies for efficiency and scalability.
+A comprehensive full-stack application for organizing contacts, creating trips, and managing volunteers. Built with modern web technologies for efficiency and scalability.
 
 ## 🚀 Features
 
 ### Core Functionality
 - **Contact Management** - Add, edit, and organize contacts with custom fields
 - **Custom Tagging System** - Create flexible tags (e.g., Language: Kannada, Skill: Photography)
-- **Automatic Lists** - Dynamic lists generated based on contact tags
-- **Trip Groups** - Create and manage travel groups with members from your contacts
-- **Communication Hub** - Real-time messaging within trip groups
+- **Smart Lists** - Dynamic lists generated based on contact tags (and manual groupings)
+- **Trips** - Create and manage travel groups with members from your contacts
+- **Communication Hub** - Real-time messaging within trips
 - **Volunteer Management** - Track volunteer skills and assign roles
 
 ### Advanced Features
@@ -148,14 +148,14 @@ npm run dev
 - **Users** - System users with authentication
 - **Contacts** - People in your network with custom fields
 - **Tags** - Flexible labeling system (name + optional value)
-- **Lists** - Both manual and automatic contact groupings
-- **TripGroups** - Travel groups with members and planning tools
+- **Smart Lists** - Both manual and automatic contact groupings
+- **Trips** - Travel groups with members and planning tools
 - **Messages** - Real-time communication within groups
 
 ### Relationships
 - Contacts can have multiple tags (many-to-many)
 - Tags automatically generate corresponding lists
-- Trip groups contain members (contacts or users)
+- Trips contain members (contacts or users)
 - Groups have itineraries, expenses, and messages
 
 ## 📡 API Endpoints
@@ -177,13 +177,13 @@ npm run dev
 - `PUT /api/tags/:id` - Update tag
 - `DELETE /api/tags/:id` - Delete tag
 
-### Lists
-- `GET /api/lists` - List all contact lists
+### Smart Lists
+- `GET /api/lists` - List all smart lists (contact groupings)
 - `POST /api/lists` - Create manual list
 - `POST /api/lists/:id/contacts` - Add contact to list
 
 ### Groups
-- `GET /api/groups` - List trip groups
+- `GET /api/groups` - List trips
 - `POST /api/groups` - Create new group
 - `PUT /api/groups/:id` - Update group
 - `POST /api/groups/:id/members` - Add members
@@ -271,12 +271,12 @@ npm test
 - Tag usage statistics and management
 
 ### 3. Smart Lists
-- Automatic lists created based on tags
-- Manual lists for custom groupings
+- Smart lists created automatically from tags
+- Manual smart lists for custom contact groupings
 - Real-time updates when contacts are modified
 - Export capabilities for external use
 
-### 4. Trip Groups
+### 4. Trips
 - Create groups with destinations, dates, and budgets
 - Add contacts or system users as members
 - Assign roles (Organizer, Co-Organizer, Member, Volunteer)
