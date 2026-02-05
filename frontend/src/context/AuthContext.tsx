@@ -120,14 +120,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
           }
-        } catch (error) {
+        } catch (error: unknown) {
+          const err = error as { isNetworkError?: boolean; response?: { status: number } };
           // #region agent log
-          console.error('[DEBUG AuthContext.tsx:115] loadUser ERROR', {error:error?.toString(),message:error?.message});
-          fetch('http://127.0.0.1:7242/ingest/fe4a1550-1fce-479e-9704-18d14bef03f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.tsx:115',message:'loadUser ERROR',data:{error:error?.toString(),message:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'B'})}).catch(()=>{});
+          console.error('[DEBUG AuthContext.tsx:115] loadUser ERROR', {error:err?.toString(),message:(err as Error)?.message});
+          fetch('http://127.0.0.1:7242/ingest/fe4a1550-1fce-479e-9704-18d14bef03f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.tsx:115',message:'loadUser ERROR',data:{error:err?.toString(),message:(err as Error)?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'B'})}).catch(()=>{});
           // #endregion
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          dispatch({ type: 'AUTH_ERROR', payload: 'Session expired' });
+          const isUnauthorized = err?.response?.status === 401 || err?.response?.status === 403;
+          const noResponse = !err?.response; // network error, offline, or timeout
+          if (isUnauthorized) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            dispatch({ type: 'LOGOUT' });
+            dispatch({ type: 'AUTH_ERROR', payload: 'Session expired' });
+          } else if (noResponse && token) {
+            // Offline or network failure: keep using cached user so app stays usable offline
+            try {
+              const cached = localStorage.getItem('user');
+              if (cached) {
+                const user = JSON.parse(cached) as User;
+                dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+              } else {
+                localStorage.removeItem('token');
+                dispatch({ type: 'LOGOUT' });
+              }
+            } catch {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              dispatch({ type: 'LOGOUT' });
+            }
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            dispatch({ type: 'LOGOUT' });
+            dispatch({ type: 'AUTH_ERROR', payload: 'Session expired' });
+          }
         }
       }
     };
