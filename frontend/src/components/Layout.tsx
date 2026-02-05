@@ -18,16 +18,19 @@ import {
   MapIcon,
   DocumentTextIcon,
   CalendarIcon,
+  EllipsisHorizontalIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { LAYOUTS, ROUTES, getLayoutIdForPath, MOBILE_NAV_ITEMS, type UXLayoutID } from '../ux';
+import { TRIP_SECTIONS_MAIN, TRIP_SECTIONS_MORE } from './TripShell';
+import { ActionSheet } from './ui';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, adminOnly: false },
   { name: 'Contacts', href: '/contacts', icon: UserGroupIcon, adminOnly: true },
   { name: 'Tags', href: '/tags', icon: TagIcon, adminOnly: true },
-  { name: 'Lists', href: '/lists', icon: ListBulletIcon, adminOnly: true },
+  { name: 'Smart Lists', href: '/lists', icon: ListBulletIcon, adminOnly: true },
   { name: 'Groups', href: '/groups', icon: UserGroupIcon, adminOnly: false },
   { name: 'Notes', href: '/notes', icon: DocumentTextIcon, adminOnly: false },
   { name: 'Calendar', href: '/calendar', icon: CalendarIcon, adminOnly: false },
@@ -53,11 +56,22 @@ interface LayoutProps {
   layoutId?: UXLayoutID;
 }
 
+/** Match /groups/:id or /groups/:id/... to get trip id. */
+function getTripIdFromPath(pathname: string): string | null {
+  const m = pathname.match(/^\/groups\/([^/]+)/);
+  return m ? m[1] : null;
+}
+
 function LayoutContent({ children, layoutIdProp }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tripMoreSheetOpen, setTripMoreSheetOpen] = useState(false);
+
+  const tripId = getTripIdFromPath(location.pathname);
+  /** On mobile when inside a trip we show the trip bottom bar and hide the main app bottom nav (thumb zone, §5.4). */
+  const showTripBottomBar = Boolean(tripId);
 
   const layoutId: UXLayoutID = layoutIdProp ?? getLayoutIdForPath(location.pathname);
   const spec = LAYOUTS[layoutId];
@@ -98,7 +112,7 @@ function LayoutContent({ children, layoutIdProp }: LayoutProps) {
           </Link>
           <button
             onClick={closeMobileMenu}
-            className="md:hidden p-2 text-gray-400 hover:text-gray-600"
+            className="md:hidden flex items-center justify-center min-h-touch min-w-touch p-2 text-gray-400 hover:text-gray-600"
             aria-label="Close menu"
           >
             <XMarkIcon className="h-6 w-6" />
@@ -153,8 +167,9 @@ function LayoutContent({ children, layoutIdProp }: LayoutProps) {
             </div>
             <button
               onClick={handleLogout}
-              className="ml-3 flex-shrink-0 p-1 text-gray-400 hover:text-gray-500"
+              className="ml-3 flex-shrink-0 flex items-center justify-center min-h-touch min-w-touch p-1 text-gray-400 hover:text-gray-500"
               title="Logout"
+              aria-label="Logout"
             >
               <ArrowRightOnRectangleIcon className="h-5 w-5" />
             </button>
@@ -174,7 +189,7 @@ function LayoutContent({ children, layoutIdProp }: LayoutProps) {
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className={classNames(
-              'p-2 text-gray-600 hover:text-gray-900',
+              'flex items-center justify-center min-h-touch min-w-touch p-2 text-gray-600 hover:text-gray-900',
               showSidebarDesktop && 'md:hidden'
             )}
             aria-label="Open menu"
@@ -221,54 +236,125 @@ function LayoutContent({ children, layoutIdProp }: LayoutProps) {
         </div>
       </div>
 
-      {/* Mobile bottom bar — spec §4.2, §8.4 (below md only) */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200"
-        aria-label="Primary navigation"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
-      >
-        <div className="flex items-stretch justify-around min-h-[56px]">
-          {MOBILE_NAV_ITEMS.filter((item) => !('adminOnly' in item && item.adminOnly) || isAdmin(user)).map((item) => {
-            const Icon = MOBILE_BAR_ICONS[item.id];
-            const href = 'href' in item ? item.href : '';
-            const isActive =
-              href &&
-              (location.pathname === href ||
-                (href === ROUTES.GROUPS && location.pathname.startsWith(ROUTES.GROUPS + '/')));
-            const isMore = 'openDrawer' in item && item.openDrawer;
+      {/* Mobile: main app bottom bar — hidden when inside a trip (trip bar is shown instead, §5.4) */}
+      {!showTripBottomBar && (
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200"
+          aria-label="Primary navigation"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
+        >
+          <div className="flex items-stretch justify-around min-h-[56px]">
+            {MOBILE_NAV_ITEMS.filter((item) => !('adminOnly' in item && item.adminOnly) || isAdmin(user)).map((item) => {
+              const Icon = MOBILE_BAR_ICONS[item.id];
+              const href = 'href' in item ? item.href : '';
+              const isActive =
+                href &&
+                (location.pathname === href ||
+                  (href === ROUTES.GROUPS && location.pathname.startsWith(ROUTES.GROUPS + '/')));
+              const isMore = 'openDrawer' in item && item.openDrawer;
 
-            if (isMore) {
+              if (isMore) {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[44px] min-w-[44px] text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100"
+                    aria-label="More menu"
+                  >
+                    {Icon && <Icon className="h-6 w-6 shrink-0" aria-hidden />}
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              }
+
               return (
-                <button
+                <Link
                   key={item.id}
-                  type="button"
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[44px] min-w-[44px] text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100"
-                  aria-label="More menu"
+                  to={href || '#'}
+                  className={classNames(
+                    'flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[44px] min-w-[44px]',
+                    isActive ? 'text-primary-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                  )}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   {Icon && <Icon className="h-6 w-6 shrink-0" aria-hidden />}
                   <span className="text-xs font-medium">{item.label}</span>
-                </button>
+                </Link>
               );
-            }
+            })}
+          </div>
+        </nav>
+      )}
 
-            return (
-              <Link
-                key={item.id}
-                to={href || '#'}
-                className={classNames(
-                  'flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[44px] min-w-[44px]',
-                  isActive ? 'text-primary-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
-                )}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {Icon && <Icon className="h-6 w-6 shrink-0" aria-hidden />}
-                <span className="text-xs font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
+      {/* Mobile: trip section bottom bar — when inside /groups/:id/... (thumb zone, §5.4). Replaces main nav. */}
+      {showTripBottomBar && tripId && (
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200"
+          aria-label="Trip sections"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
+        >
+          <div className="flex items-stretch justify-around min-h-[56px]">
+            {TRIP_SECTIONS_MAIN.map(({ label, to, icon: Icon }) => {
+              const href = to(tripId);
+              const isOverview = label === 'Overview';
+              const isActive = isOverview
+                ? location.pathname === href || location.pathname === href + '/'
+                : location.pathname === href || location.pathname.startsWith(href + '/');
+              return (
+                <Link
+                  key={label}
+                  to={href}
+                  end={isOverview}
+                  className={classNames(
+                    'flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-touch min-w-[44px]',
+                    isActive ? 'text-primary-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                  )}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon className="h-6 w-6 shrink-0" aria-hidden />
+                  <span className="text-xs font-medium">{label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setTripMoreSheetOpen(true)}
+              className={classNames(
+                'flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-touch min-w-[44px]',
+                'text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+              )}
+              aria-label="More trip sections"
+            >
+              <EllipsisHorizontalIcon className="h-6 w-6 shrink-0" aria-hidden />
+              <span className="text-xs font-medium">More</span>
+            </button>
+          </div>
+        </nav>
+      )}
+
+      <ActionSheet
+        open={tripMoreSheetOpen}
+        onClose={() => setTripMoreSheetOpen(false)}
+        title="Trip sections"
+      >
+        <div className="space-y-1">
+          {TRIP_SECTIONS_MORE.map(({ label, to, icon: Icon }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                if (tripId) navigate(to(tripId));
+                setTripMoreSheetOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[17px] font-medium text-gray-900 hover:bg-gray-100 active:bg-gray-200"
+            >
+              <Icon className="h-6 w-6 shrink-0 text-gray-500" aria-hidden />
+              {label}
+            </button>
+          ))}
         </div>
-      </nav>
+      </ActionSheet>
     </div>
   );
 }

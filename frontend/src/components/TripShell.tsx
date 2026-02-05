@@ -20,6 +20,7 @@ import { ROUTES, group, groupExpenses, groupItinerary, groupKanban, groupTickets
 import DelightfulError from './DelightfulError';
 import { Button } from './ui';
 
+/** Trip section nav items (spec §5.4). Shared for top tabs (desktop) and bottom bar (mobile). */
 const TRIP_SUB_NAV = [
   { label: 'Overview', to: (id: string) => group(id), icon: HomeIcon },
   { label: 'Expenses', to: (id: string) => groupExpenses(id), icon: CurrencyDollarIcon },
@@ -28,6 +29,11 @@ const TRIP_SUB_NAV = [
   { label: 'Tickets', to: (id: string) => groupTickets(id), icon: TicketIcon },
   { label: 'Chat', to: (id: string) => groupChat(id), icon: ChatBubbleLeftRightIcon },
 ] as const;
+
+/** Main bar items for mobile trip bottom nav (Overview, Expenses, Itinerary). */
+export const TRIP_SECTIONS_MAIN = TRIP_SUB_NAV.slice(0, 3);
+/** Items shown in "More" action sheet on mobile (Tasks, Tickets, Chat). */
+export const TRIP_SECTIONS_MORE = TRIP_SUB_NAV.slice(3);
 
 function classNames(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -84,14 +90,14 @@ function TripShellContent() {
 
   return (
     <div className="space-y-4">
-      {/* Sticky trip context bar — shows trip group name */}
+      {/* Sticky trip context bar — shows trip name */}
       <div className="sticky top-0 z-10 -mx-4 px-4 py-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 bg-white border-b border-gray-200 shadow-sm">
         <div className="flex items-center gap-3 min-w-0 max-w-7xl mx-auto">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(ROUTES.GROUPS)}
-            className="shrink-0 p-1.5 text-gray-500 hover:text-gray-900"
+            className="shrink-0 min-h-touch min-w-touch flex items-center justify-center p-1.5 text-gray-500 hover:text-gray-900"
             aria-label="Back to trips"
           >
             <ChevronLeftIcon className="h-5 w-5" />
@@ -110,9 +116,9 @@ function TripShellContent() {
         </div>
       </div>
 
-      {/* Sub-nav (tabs / horizontal nav) */}
+      {/* Sub-nav (tabs): desktop only; on mobile trip sections are in the bottom bar (Layout) */}
       <nav
-        className="flex gap-0 border-b border-gray-200 overflow-x-auto"
+        className="hidden md:flex gap-0 border-b border-gray-200 overflow-x-auto"
         aria-label="Trip sections"
       >
         {TRIP_SUB_NAV.map(({ label, to, icon: Icon }) => {

@@ -56,8 +56,9 @@ export function SmartCard({ ticket, onOpenFull, onShare, compact, className = ''
             <button
               type="button"
               onClick={() => onOpenFull(ticket)}
-              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              className="flex items-center justify-center min-h-touch min-w-touch p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
               title="Open full"
+              aria-label="Open full screen"
             >
               <ArrowsPointingOutIcon className="h-4 w-4" />
             </button>
@@ -66,8 +67,9 @@ export function SmartCard({ ticket, onOpenFull, onShare, compact, className = ''
             <button
               type="button"
               onClick={() => onShare(ticket)}
-              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              className="flex items-center justify-center min-h-touch min-w-touch p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
               title="Share"
+              aria-label="Share"
             >
               <ShareIcon className="h-4 w-4" />
             </button>
@@ -120,7 +122,9 @@ export function SmartCard({ ticket, onOpenFull, onShare, compact, className = ''
 
       {(!ocr || ticket.ocrStatus === 'NONE' || ticket.ocrStatus === 'FAILED') && (
         <p className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-500">
-          No scan data yet. Process OCR to show carrier, time, seat, gate, PNR.
+          {ticket.ocrStatus === 'FAILED'
+            ? 'Scan failed. Use “Re-run OCR” to try again.'
+            : 'No scan data yet. Use “Run OCR” to extract carrier, time, seat, gate, PNR.'}
         </p>
       )}
     </div>

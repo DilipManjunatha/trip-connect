@@ -19,6 +19,9 @@ export type { ComboboxProps, ComboboxOption } from './Combobox';
 export { default as LargeTitleHeader } from './LargeTitleHeader';
 export type { LargeTitleHeaderProps } from './LargeTitleHeader';
 
+export { default as CreateFAB } from './CreateFAB';
+export type { CreateFABProps } from './CreateFAB';
+
 export { default as SearchField } from './SearchField';
 export type { SearchFieldProps } from './SearchField';
 
