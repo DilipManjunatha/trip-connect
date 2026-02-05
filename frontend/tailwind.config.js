@@ -134,11 +134,18 @@ export default {
         9: '2.25rem',
         10: '2.5rem',
         11: '2.75rem',
+        touch: '44px',
         12: '3rem',
         14: '3.5rem',
         16: '4rem',
         20: '5rem',
         24: '6rem',
+      },
+      minHeight: {
+        touch: '44px',
+      },
+      minWidth: {
+        touch: '44px',
       },
       borderRadius: {
         none: '0',
