@@ -3,8 +3,7 @@
  * Keyed by route id; exposes { trip, loading, error } for TripShell and trip-scoped pages.
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { api } from '../services/api';
 import type { TripGroup } from '../types';
 

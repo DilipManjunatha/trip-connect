@@ -2,7 +2,7 @@
  * Current trip name for the app header when user is inside a trip (Layout shows which group they're in).
  */
 
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface CurrentTripContextValue {
   tripName: string | null;

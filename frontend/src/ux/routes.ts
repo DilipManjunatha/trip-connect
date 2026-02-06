@@ -57,3 +57,32 @@ export function groupChat(id: string): string {
 export function noteDetail(id: string): string {
   return `${ROUTES.NOTES}/${id}`
 }
+
+/** Long-form create/edit (dedicated pages, no modals). */
+export function contactNew(): string {
+  return `${ROUTES.CONTACTS}/new`
+}
+
+export function contactEdit(id: string): string {
+  return `${ROUTES.CONTACTS}/${id}/edit`
+}
+
+export function groupNew(): string {
+  return `${ROUTES.GROUPS}/new`
+}
+
+export function groupEdit(id: string): string {
+  return `${ROUTES.GROUPS}/${id}/edit`
+}
+
+export function groupExpenseNew(groupId: string): string {
+  return `${ROUTES.GROUPS}/${groupId}/expenses/new`
+}
+
+export function groupExpenseEdit(groupId: string, expenseId: string): string {
+  return `${ROUTES.GROUPS}/${groupId}/expenses/${expenseId}/edit`
+}
+
+export function userEdit(id: string): string {
+  return `${ROUTES.USERS}/${id}/edit`
+}

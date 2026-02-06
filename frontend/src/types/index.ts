@@ -239,7 +239,8 @@ export interface PaginationMeta {
 export interface PaginatedResponse<T = any> {
   success: boolean;
   data: {
-    [key: string]: T[];
+    items?: T[];
+    [key: string]: T[] | PaginationMeta | undefined;
     pagination: PaginationMeta;
   };
 }

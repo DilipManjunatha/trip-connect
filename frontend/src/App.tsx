@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -11,13 +11,16 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
+import ContactForm from './pages/ContactForm';
 import Tags from './pages/Tags';
 import Lists from './pages/Lists';
 import Groups from './pages/Groups';
-import Messages from './pages/Messages';
+import GroupForm from './pages/GroupForm';
 import Expenses from './pages/Expenses';
+import ExpenseForm from './pages/ExpenseForm';
 import Itinerary from './pages/Itinerary';
 import Users from './pages/Users';
+import UserEdit from './pages/UserEdit';
 import TripShell from './components/TripShell';
 import TripOverview from './pages/TripOverview';
 import TripKanban from './pages/TripKanban';
@@ -78,6 +81,30 @@ function App() {
         }
       />
       <Route
+        path={`${ROUTES.CONTACTS}/new`}
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <Layout>
+                <ContactForm />
+              </Layout>
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={`${ROUTES.CONTACTS}/:id/edit`}
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <Layout>
+                <ContactForm />
+              </Layout>
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.TAGS}
         element={
           <ProtectedRoute>
@@ -114,6 +141,26 @@ function App() {
           }
         />
         <Route
+          path="new"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <GroupForm />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path=":id/edit"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <GroupForm />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path=":id"
           element={
             <ProtectedRoute>
@@ -125,6 +172,8 @@ function App() {
         >
           <Route index element={<TripOverview />} />
           <Route path="expenses" element={<Expenses />} />
+          <Route path="expenses/new" element={<ExpenseForm />} />
+          <Route path="expenses/:expId/edit" element={<ExpenseForm />} />
           <Route path="itinerary" element={<Itinerary />} />
           <Route path="kanban" element={<TripKanban />} />
           <Route path="tickets" element={<TripTickets />} />
@@ -151,6 +200,18 @@ function App() {
             <AdminRoute>
               <Layout>
                 <Users />
+              </Layout>
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={`${ROUTES.USERS}/:id/edit`}
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <Layout>
+                <UserEdit />
               </Layout>
             </AdminRoute>
           </ProtectedRoute>
