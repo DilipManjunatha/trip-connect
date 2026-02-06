@@ -86,26 +86,37 @@ export default function MonthGrid({
   const weekRows = useMemo(() => getDaysInMonthView(year, month), [year, month]);
 
   return (
-    <div className="grid grid-cols-7 auto-rows-fr min-h-[360px] flex-1">
+    <div
+      className="grid auto-rows-fr min-h-[360px] flex-1 w-full min-w-0 overflow-hidden box-border"
+      style={{
+        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+        width: '100%',
+        maxWidth: '100%',
+      }}
+    >
       {weekRows.map((row, rowIdx) =>
         row.map((day, colIdx) => {
           const isCurrentMonth = day ? isSameMonth(day, new Date(year, month, 1)) : false;
           const isToday = day ? isSameDay(day, today) : false;
           const tripsOnDay =
             day && groups.filter((g) => isDateInTripRange(day, g.startDate, g.endDate));
+          const isLastCol = colIdx === 6;
+          /* Inset right shadow as divider so it doesn't add to layout width (avoids last column overflow) */
+          const dividerShadow = isLastCol ? 'none' : 'inset -1px 0 0 0 rgb(243 244 246)';
 
           return (
             <div
               key={rowIdx * 7 + colIdx}
               className={`
-                min-h-[80px] sm:min-h-[100px] border-b border-r border-gray-100 p-1 flex flex-col
+                min-h-[80px] sm:min-h-[100px] border-b border-gray-100 p-1 flex flex-col min-w-0 overflow-hidden box-border
                 ${!isCurrentMonth ? 'bg-gray-50/50' : 'bg-white'}
                 ${isToday ? 'ring-1 ring-inset ring-primary-500 bg-primary-50/30' : ''}
               `}
+              style={{ boxShadow: dividerShadow }}
             >
               <div
                 className={`
-                  text-sm font-medium min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-full shrink-0
+                  text-sm font-medium size-8 min-w-0 max-w-full flex items-center justify-center rounded-full shrink-0
                   ${!isCurrentMonth ? 'text-gray-400 opacity-60' : 'text-gray-700'}
                   ${isToday ? 'bg-primary-600 text-white' : ''}
                 `}
@@ -118,9 +129,10 @@ export default function MonthGrid({
                     <button
                       key={trip.id}
                       type="button"
+                      data-calendar-trip
                       onClick={() => onTripClick(trip.id)}
                       className={`
-                        w-full text-left px-1.5 py-0.5 rounded text-xs font-medium text-white truncate
+                        relative z-10 w-full text-left px-1.5 py-0.5 rounded text-xs font-medium text-white truncate
                         hover:opacity-90 transition focus:ring-2 focus:ring-primary-500 focus:ring-offset-1
                         ${getTripColor(i)}
                       `}
