@@ -48,8 +48,6 @@ const Combobox: React.FC<ComboboxProps> = ({
     );
   }, [options, query, searchable]);
 
-  const selectedOption = options.find((opt) => opt.value === value);
-
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
     if (onSearch) {

@@ -33,3 +33,6 @@ export type { ListRowProps } from './ListRow';
 
 export { default as ActionSheet } from './ActionSheet';
 export type { ActionSheetProps } from './ActionSheet';
+
+export { default as BottomSheet } from './BottomSheet';
+export type { BottomSheetProps } from './BottomSheet';

@@ -46,19 +46,19 @@ export default function ActionSheet({
             >
               <Dialog.Panel
                 className={clsx(
-                  'w-full max-w-md overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl',
+                  'w-full max-w-md overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl mx-auto',
                   className
                 )}
               >
                 {title ? (
-                  <div className="px-5 pt-4 pb-2">
+                  <div className="px-5 pt-4 pb-2 text-center">
                     <Dialog.Title className="text-sm font-semibold text-gray-600">
                       {title}
                     </Dialog.Title>
                   </div>
                 ) : null}
 
-                <div className="px-2 pb-2">{children}</div>
+                <div className="px-2 pb-2 [&_button]:justify-center">{children}</div>
 
                 <div className="px-2 pb-3">
                   <button
