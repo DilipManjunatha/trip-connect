@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
+import { groupExpenseNew } from '../ux';
 import { PlusIcon, PencilSquareIcon, TrashIcon, CurrencyDollarIcon, CalendarIcon, TagIcon, UserGroupIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { useTripFromRoute } from '../context/TripContext';
-import { Button, CreateFAB, Input, Modal, FormField, Select } from '../components/ui';
+import { Button, CreateFAB, Modal } from '../components/ui';
 import type { GroupMember } from '../types';
 
 /** Category order for list-by-category (spec §6.3). */
@@ -33,7 +34,7 @@ interface Expense {
 }
 
 const Expenses: React.FC = () => {
-  const { user } = useAuth();
+  useAuth();
   const navigate = useNavigate();
   const { id: idFromParams } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
@@ -43,18 +44,7 @@ const Expenses: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
-  const [showModal, setShowModal] = useState(false);
   const [detailExpense, setDetailExpense] = useState<Expense | null>(null);
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    amount: '',
-    category: 'Other',
-    paidBy: '',
-    splitType: 'EQUAL' as 'EQUAL' | 'CUSTOM' | 'PERCENTAGE',
-    date: new Date().toISOString().split('T')[0],
-  });
 
   useEffect(() => {
     if (!groupId) {
@@ -83,67 +73,6 @@ const Expenses: React.FC = () => {
       setExpenses([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOpenModal = (expense?: Expense) => {
-    if (expense) {
-      setEditingExpense(expense);
-      setFormData({
-        title: expense.title,
-        description: expense.description || '',
-        amount: expense.amount.toString(),
-        category: expense.category,
-        paidBy: expense.paidBy || '',
-        splitType: expense.splitType,
-        date: expense.date ? expense.date.split('T')[0] : new Date().toISOString().split('T')[0],
-      });
-    } else {
-      setEditingExpense(null);
-      setFormData({
-        title: '',
-        description: '',
-        amount: '',
-        category: 'Other',
-        paidBy: '',
-        splitType: 'EQUAL',
-        date: new Date().toISOString().split('T')[0],
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!groupId) return;
-
-    try {
-      const payload = {
-        title: formData.title,
-        description: formData.description || undefined,
-        amount: parseFloat(formData.amount),
-        category: formData.category,
-        paidBy: formData.paidBy || undefined,
-        splitType: formData.splitType,
-        date: formData.date,
-      };
-
-      if (editingExpense) {
-        await api.put(`/groups/${groupId}/expenses/${editingExpense.id}`, payload);
-        toast.success('Expense updated successfully');
-      } else {
-        await api.post(`/groups/${groupId}/expenses`, payload);
-        toast.success('Expense created successfully');
-      }
-      handleCloseModal();
-      fetchExpenses();
-    } catch (error: any) {
-      console.error('Expense submit error:', error.response?.data);
-      toast.error(error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'Failed to save expense');
     }
   };
 
@@ -212,7 +141,7 @@ const Expenses: React.FC = () => {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Expenses</h1>
         <span className="hidden md:inline-block">
           <Button
-            onClick={() => handleOpenModal()}
+            onClick={() => groupId && navigate(groupExpenseNew(groupId))}
             leftIcon={<PlusIcon className="h-5 w-5" />}
             className="w-full sm:w-auto"
           >
@@ -220,7 +149,7 @@ const Expenses: React.FC = () => {
           </Button>
         </span>
       </div>
-      <CreateFAB label="Add expense" onClick={() => handleOpenModal()} />
+      <CreateFAB label="Add expense" onClick={() => groupId && navigate(groupExpenseNew(groupId))} />
 
       {/* Total Summary Card */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
@@ -277,7 +206,7 @@ const Expenses: React.FC = () => {
           <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
           <p className="text-gray-500 text-lg mt-4">No expenses recorded yet</p>
           <Button
-            onClick={() => handleOpenModal()}
+            onClick={() => groupId && navigate(groupExpenseNew(groupId))}
             variant="ghost"
             className="mt-4"
           >
@@ -365,7 +294,7 @@ const Expenses: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  handleOpenModal(detailExpense);
+                  navigate(`${detailExpense.id}/edit`, { relative: 'route' });
                   setDetailExpense(null);
                 }}
                 leftIcon={<PencilSquareIcon className="h-4 w-4" />}
@@ -394,113 +323,6 @@ const Expenses: React.FC = () => {
         )}
       </Modal>
 
-      {/* Add/Edit modal */}
-      <Modal
-        open={showModal}
-        onClose={handleCloseModal}
-        onAfterClose={() => {
-          setEditingExpense(null);
-          setFormData({
-            title: '',
-            description: '',
-            amount: '',
-            category: 'Other',
-            paidBy: '',
-            splitType: 'EQUAL',
-            date: new Date().toISOString().split('T')[0],
-          });
-        }}
-        title={editingExpense ? 'Edit Expense' : 'Add New Expense'}
-        size="md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Title" required>
-            <Input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Hotel Accommodation"
-            />
-          </FormField>
-          <FormField label="Amount" required>
-            <Input
-              type="number"
-              step="0.01"
-              required
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              placeholder="0.00"
-            />
-          </FormField>
-          <FormField label="Category">
-            <Select
-              value={formData.category}
-              onChange={(value) => setFormData({ ...formData, category: value })}
-              options={[
-                { value: 'Accommodation', label: 'Accommodation' },
-                { value: 'Transportation', label: 'Transportation' },
-                { value: 'Food', label: 'Food' },
-                { value: 'Activities', label: 'Activities' },
-                { value: 'Shopping', label: 'Shopping' },
-                { value: 'Other', label: 'Other' },
-              ]}
-            />
-          </FormField>
-          <FormField label="Paid By">
-            <Input
-              type="text"
-              value={formData.paidBy}
-              onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
-              placeholder="Who paid for this?"
-            />
-          </FormField>
-          <FormField label="Split Type">
-            <Select
-              value={formData.splitType}
-              onChange={(value) => setFormData({ ...formData, splitType: value as any })}
-              options={[
-                { value: 'EQUAL', label: 'Equal' },
-                { value: 'CUSTOM', label: 'Custom' },
-                { value: 'PERCENTAGE', label: 'Percentage' },
-              ]}
-            />
-          </FormField>
-          <FormField label="Date" required>
-            <Input
-              type="date"
-              required
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            />
-          </FormField>
-          <FormField label="Description">
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="Additional details..."
-            />
-          </FormField>
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCloseModal}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-            >
-              {editingExpense ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };

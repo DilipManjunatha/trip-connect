@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { userEdit } from '../ux';
 import { userService } from '../services';
 import { User } from '../types';
 import toast from 'react-hot-toast';
@@ -10,11 +12,9 @@ import {
   UserIcon,
   TrashIcon,
   PencilIcon,
-  XMarkIcon,
-  CheckIcon,
 } from '@heroicons/react/24/outline';
 import DelightfulError from '../components/DelightfulError';
-import { ActionSheet, Button, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
+import { ActionSheet, Button, GroupedList, LargeTitleHeader, ListRow, SearchField } from '../components/ui';
 
 interface UserStats {
   totalUsers: number;
@@ -25,24 +25,16 @@ interface UserStats {
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [showActions, setShowActions] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editForm, setEditForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    username: '',
-    role: 'USER' as 'USER' | 'ADMIN',
-  });
 
   useEffect(() => {
     fetchUsers();
@@ -73,45 +65,6 @@ const Users: React.FC = () => {
       setStats(response.data);
     } catch (err: any) {
       console.error('Failed to fetch stats:', err);
-    }
-  };
-
-  const handleEditUser = (user: User) => {
-    setEditingUser(user);
-    setEditForm({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    });
-    setShowEditModal(true);
-  };
-
-  const handleUpdateUser = async () => {
-    if (!editingUser) return;
-
-    try {
-      // Update basic info
-      await userService.update(editingUser.id, {
-        firstName: editForm.firstName,
-        lastName: editForm.lastName,
-        email: editForm.email,
-        username: editForm.username,
-      });
-
-      // Update role if changed
-      if (editForm.role !== editingUser.role) {
-        await userService.updateRole(editingUser.id, editForm.role);
-      }
-
-      toast.success('User updated successfully');
-      setShowEditModal(false);
-      setEditingUser(null);
-      fetchUsers();
-      fetchStats();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update user');
     }
   };
 
@@ -293,7 +246,7 @@ const Users: React.FC = () => {
                     </button>
                   ) : null
                 }
-                onClick={() => handleEditUser(u)}
+                onClick={() => navigate(userEdit(u.id))}
                 showChevron={false}
               />
               {idx !== filteredUsers.length - 1 ? <div className="mx-4 h-px bg-gray-100" /> : null}
@@ -436,7 +389,7 @@ const Users: React.FC = () => {
                             )}
                           </Button>
                           <Button
-                            onClick={() => handleEditUser(user)}
+                            onClick={() => navigate(userEdit(user.id))}
                             variant="ghost"
                             size="sm"
                             className="text-primary-600 hover:text-primary-900"
@@ -470,92 +423,6 @@ const Users: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      <Modal
-        open={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-        }}
-        onAfterClose={() => setEditingUser(null)}
-        title="Edit User"
-        size="md"
-      >
-        <div className="space-y-4">
-          <FormField label="First Name">
-            <Input
-              type="text"
-              value={editForm.firstName}
-              onChange={(e) =>
-                setEditForm({ ...editForm, firstName: e.target.value })
-              }
-            />
-          </FormField>
-          <FormField label="Last Name">
-            <Input
-              type="text"
-              value={editForm.lastName}
-              onChange={(e) =>
-                setEditForm({ ...editForm, lastName: e.target.value })
-              }
-            />
-          </FormField>
-          <FormField label="Email">
-            <Input
-              type="email"
-              value={editForm.email}
-              onChange={(e) =>
-                setEditForm({ ...editForm, email: e.target.value })
-              }
-            />
-          </FormField>
-          <FormField label="Username">
-            <Input
-              type="text"
-              value={editForm.username}
-              onChange={(e) =>
-                setEditForm({ ...editForm, username: e.target.value })
-              }
-            />
-          </FormField>
-          <FormField label="Role">
-            <Select
-              value={editForm.role}
-              onChange={(value) =>
-                setEditForm({
-                  ...editForm,
-                  role: value as 'USER' | 'ADMIN',
-                })
-              }
-              options={[
-                { value: 'USER', label: 'User' },
-                { value: 'ADMIN', label: 'Admin' },
-              ]}
-            />
-          </FormField>
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowEditModal(false);
-              }}
-              className="flex-1"
-            >
-              <XMarkIcon className="h-5 w-5 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleUpdateUser}
-              className="flex-1"
-            >
-              <CheckIcon className="h-5 w-5 mr-2" />
-              Save Changes
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
       <ActionSheet open={showActions} onClose={() => setShowActions(false)} title={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : 'Actions'}>
         <div className="space-y-2">
           <button
@@ -581,7 +448,7 @@ const Users: React.FC = () => {
             onClick={() => {
               if (!selectedUser) return;
               setShowActions(false);
-              handleEditUser(selectedUser);
+              navigate(userEdit(selectedUser.id));
             }}
             className="w-full rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50"
           >

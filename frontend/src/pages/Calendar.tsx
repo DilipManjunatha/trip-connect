@@ -43,7 +43,6 @@ export default function Calendar() {
   );
   const x = useMotionValue(0);
   const dragControls = useDragControls();
-  const pointerUpRef = useRef<{ clientX: number; clientY: number } | null>(null);
 
   // Center the middle panel when container width is known (strip layout: prev | current | next)
   useEffect(() => {
@@ -117,28 +116,9 @@ export default function Calendar() {
     return { year: d.getFullYear(), month: d.getMonth() };
   }, [viewDateObj]);
 
-  const TAP_THRESHOLD_PX = 8;
   const restX = -containerWidth; // middle panel (current month) in view
   const handleDragEnd = (_: unknown, info: { offset: { x: number } }) => {
     if (containerWidth <= 0) return;
-    const wasTap = Math.abs(info.offset.x) < TAP_THRESHOLD_PX;
-    const up = pointerUpRef.current;
-    pointerUpRef.current = null;
-    if (wasTap && up) {
-      const { clientX, clientY } = up;
-      requestAnimationFrame(() => {
-        const overlay = document.getElementById('calendar-drag-overlay');
-        if (overlay) {
-          overlay.style.pointerEvents = 'none';
-          const target = document.elementFromPoint(clientX, clientY);
-          overlay.style.pointerEvents = '';
-          if (target && target !== overlay) {
-            (target as HTMLElement).click();
-          }
-        }
-      });
-      return;
-    }
     const duration = reduceMotion ? 0 : SNAP_DURATION_S;
     if (info.offset.x < -DRAG_THRESHOLD_PX) {
       // Dragged left → reveal next month; animate full left then reset to center
@@ -275,8 +255,21 @@ export default function Calendar() {
             onDragEnd={handleDragEnd}
             transition={{ type: 'tween', duration: SNAP_DURATION_S, ease: 'easeOut' }}
           >
-            <div className="flex flex-1 min-h-0 relative">
-            <div className="shrink-0 flex flex-col flex-1 min-h-0" style={{ width: containerWidth }}>
+            <div className="flex flex-1 min-h-0 relative" style={{ width: containerWidth * 3 }}>
+            <div
+              className="flex flex-col min-h-0 overflow-hidden"
+              style={{
+                width: containerWidth,
+                minWidth: containerWidth,
+                maxWidth: containerWidth,
+                flex: '0 0 auto',
+              }}
+              onPointerDown={(e) => {
+                if (reduceMotion) return;
+                if ((e.target as HTMLElement).closest?.('button[data-calendar-trip]')) return;
+                dragControls.start(e);
+              }}
+            >
               <MonthGrid
                 year={prevMonth.year}
                 month={prevMonth.month}
@@ -285,7 +278,20 @@ export default function Calendar() {
                 onTripClick={handleTripClick}
               />
             </div>
-            <div className="shrink-0 flex flex-col flex-1 min-h-0" style={{ width: containerWidth }}>
+            <div
+              className="flex flex-col min-h-0 overflow-hidden"
+              style={{
+                width: containerWidth,
+                minWidth: containerWidth,
+                maxWidth: containerWidth,
+                flex: '0 0 auto',
+              }}
+              onPointerDown={(e) => {
+                if (reduceMotion) return;
+                if ((e.target as HTMLElement).closest?.('button[data-calendar-trip]')) return;
+                dragControls.start(e);
+              }}
+            >
               <MonthGrid
                 year={viewDate.year}
                 month={viewDate.month}
@@ -294,7 +300,20 @@ export default function Calendar() {
                 onTripClick={handleTripClick}
               />
             </div>
-            <div className="shrink-0 flex flex-col flex-1 min-h-0" style={{ width: containerWidth }}>
+            <div
+              className="flex flex-col min-h-0 overflow-hidden"
+              style={{
+                width: containerWidth,
+                minWidth: containerWidth,
+                maxWidth: containerWidth,
+                flex: '0 0 auto',
+              }}
+              onPointerDown={(e) => {
+                if (reduceMotion) return;
+                if ((e.target as HTMLElement).closest?.('button[data-calendar-trip]')) return;
+                dragControls.start(e);
+              }}
+            >
               <MonthGrid
                 year={nextMonth.year}
                 month={nextMonth.month}
@@ -303,17 +322,11 @@ export default function Calendar() {
                 onTripClick={handleTripClick}
               />
             </div>
-            {/* Overlay captures pointer to start drag from any row; taps are forwarded */}
+            {/* Overlay only forwards taps when drag was minimal; drag start is on grid wrappers so trip pills get clicks */}
             <div
               id="calendar-drag-overlay"
-              className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
+              className="absolute inset-0 pointer-events-none cursor-grab active:cursor-grabbing touch-none"
               style={{ touchAction: 'none' }}
-              onPointerDown={(e) => {
-                if (!reduceMotion) dragControls.start(e);
-              }}
-              onPointerUp={(e) => {
-                pointerUpRef.current = { clientX: e.clientX, clientY: e.clientY };
-              }}
               aria-hidden
             />
             </div>

@@ -20,7 +20,8 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
-import { Button, Modal, Input, FormField, Select } from '../components/ui';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Button, BottomSheet, CreateFAB, Modal, Input, FormField, Select } from '../components/ui';
 
 type OutletContext = { trip: TripGroup; groupId: string };
 
@@ -52,6 +53,7 @@ function getColumnLaneBg(status: KanbanCard['status']): string {
 
 const TripKanban: React.FC = () => {
   const { trip, groupId } = useOutletContext<OutletContext>();
+  const isMobile = useIsMobile();
   const [cards, setCards] = useState<KanbanCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
@@ -149,8 +151,9 @@ const TripKanban: React.FC = () => {
         prev.map((c) => (c.id === card.id ? { ...c, status: newStatus } : c))
       );
       closeCardMenu();
-    } catch {
-      toast.error('Failed to move card');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      toast.error(e.response?.data?.message ?? 'Failed to move card');
     }
   };
 
@@ -225,10 +228,13 @@ const TripKanban: React.FC = () => {
         <p className="text-sm text-gray-500">
           Tasks and reminders for <strong>{trip.name}</strong>
         </p>
-        <Button onClick={() => openCreate()} aria-label="Add card" className="min-h-touch min-w-touch flex items-center justify-center">
-          <PlusIcon className="h-5 w-5" />
-        </Button>
+        <span className="hidden md:inline-block shrink-0">
+          <Button onClick={() => openCreate()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+            Add task
+          </Button>
+        </span>
       </div>
+      <CreateFAB label="Add task" onClick={() => openCreate()} />
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0 overflow-auto">
         {COLUMNS.map((col) => (
@@ -364,45 +370,86 @@ const TripKanban: React.FC = () => {
           document.body
         )}
 
-      <Modal
-        open={modalOpen}
-        onClose={closeModal}
-        title={editingCard ? 'Edit card' : 'New card'}
-        size="md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Title" required>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Task or reminder"
-              required
-            />
-          </FormField>
-          <FormField label="Description">
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Optional details..."
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </FormField>
-          <FormField label="Status">
-            <Select
-              value={formData.status}
-              onChange={(v) => setFormData({ ...formData, status: v as KanbanCard['status'] })}
-              options={COLUMNS.map((c) => ({ value: c.id, label: c.label }))}
-            />
-          </FormField>
-          <div className="flex gap-3 pt-2">
-            <Button type="submit">{editingCard ? 'Save' : 'Create'}</Button>
-            <Button type="button" variant="outline" onClick={closeModal}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      {isMobile ? (
+        <BottomSheet
+          open={modalOpen}
+          onClose={closeModal}
+          title={editingCard ? 'Edit card' : 'New card'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Title" required>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Task or reminder"
+                required
+              />
+            </FormField>
+            <FormField label="Description">
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Optional details..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </FormField>
+            <FormField label="Status">
+              <Select
+                value={formData.status}
+                onChange={(v) => setFormData({ ...formData, status: v as KanbanCard['status'] })}
+                options={COLUMNS.map((c) => ({ value: c.id, label: c.label }))}
+              />
+            </FormField>
+            <div className="flex gap-3 pt-2">
+              <Button type="submit">{editingCard ? 'Save' : 'Create'}</Button>
+              <Button type="button" variant="outline" onClick={closeModal}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </BottomSheet>
+      ) : (
+        <Modal
+          open={modalOpen}
+          onClose={closeModal}
+          title={editingCard ? 'Edit card' : 'New card'}
+          size="md"
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Title" required>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Task or reminder"
+                required
+              />
+            </FormField>
+            <FormField label="Description">
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Optional details..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </FormField>
+            <FormField label="Status">
+              <Select
+                value={formData.status}
+                onChange={(v) => setFormData({ ...formData, status: v as KanbanCard['status'] })}
+                options={COLUMNS.map((c) => ({ value: c.id, label: c.label }))}
+              />
+            </FormField>
+            <div className="flex gap-3 pt-2">
+              <Button type="submit">{editingCard ? 'Save' : 'Create'}</Button>
+              <Button type="button" variant="outline" onClick={closeModal}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
-import { Message, TripGroup, User } from '../types';
-import { PaperAirplaneIcon, EllipsisVerticalIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Message, TripGroup } from '../types';
+import { PaperAirplaneIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
@@ -22,7 +22,7 @@ const Messages: React.FC<MessagesProps> = ({ groupId: groupIdProp, tripName }) =
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(groupIdProp ?? null);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isScopedToTrip = Boolean(groupIdProp);
 
   // Format message timestamp: show date only if not today

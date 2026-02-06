@@ -16,7 +16,7 @@ const Register: React.FC = () => {
     formState: { errors },
   } = useForm<RegisterForm>();
 
-  const password = watch('password');
+  watch('password'); // subscribe so confirm validation runs
 
   // Redirect if already logged in
   if (user) {

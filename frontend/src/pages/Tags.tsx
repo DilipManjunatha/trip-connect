@@ -5,9 +5,11 @@ import { EllipsisHorizontalIcon, PencilSquareIcon, PlusIcon, TagIcon, TrashIcon 
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { ActionSheet, BottomSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
 
 const Tags: React.FC = () => {
+  const isMobile = useIsMobile();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
@@ -228,23 +230,118 @@ const Tags: React.FC = () => {
         />
       )}
 
-      {/* Modal */}
-      <Modal
-        open={showModal}
-        onClose={handleCloseModal}
-        onAfterClose={() => {
-          setEditingTag(null);
-          setShowValueField(false);
-          setFormData({
-            name: '',
-            value: '',
-            color: '#3B82F6',
-            description: '',
-          });
-        }}
-        title={editingTag ? 'Edit Tag' : 'Create New Tag'}
-        size="md"
-      >
+      {isMobile ? (
+        <BottomSheet
+          open={showModal}
+          onClose={handleCloseModal}
+          onAfterClose={() => {
+            setEditingTag(null);
+            setShowValueField(false);
+            setFormData({
+              name: '',
+              value: '',
+              color: '#3B82F6',
+              description: '',
+            });
+          }}
+          title={editingTag ? 'Edit Tag' : 'Create New Tag'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="Tag Name" required>
+            <Input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Tag name"
+            />
+          </FormField>
+          
+          {showValueField ? (
+            <FormField label="Value (Optional)">
+              <Input
+                type="text"
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                placeholder="Optional value"
+              />
+            </FormField>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowValueField(true)}
+            >
+              <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add value (optional)
+            </Button>
+          )}
+          
+          <FormField label="Color">
+            <div className="grid grid-cols-6 gap-2">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color })}
+                  className={`min-h-touch min-w-touch w-full aspect-square rounded-lg transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 ${
+                    formData.color === color ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                  }`}
+                  style={{ backgroundColor: color }}
+                  aria-label={`Select color ${color}`}
+                />
+              ))}
+            </div>
+          </FormField>
+          
+          <FormField label="Description">
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              placeholder="Optional description"
+            />
+          </FormField>
+          
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+            >
+              {editingTag ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </form>
+        </BottomSheet>
+      ) : (
+        <Modal
+          open={showModal}
+          onClose={handleCloseModal}
+          onAfterClose={() => {
+            setEditingTag(null);
+            setShowValueField(false);
+            setFormData({
+              name: '',
+              value: '',
+              color: '#3B82F6',
+              description: '',
+            });
+          }}
+          title={editingTag ? 'Edit Tag' : 'Create New Tag'}
+          size="md"
+        >
         <form onSubmit={handleSubmit} className="space-y-4">
           <FormField label="Tag Name" required>
             <Input
@@ -324,7 +421,8 @@ const Tags: React.FC = () => {
             </Button>
           </div>
         </form>
-      </Modal>
+        </Modal>
+      )}
 
       <ActionSheet
         open={showActions}

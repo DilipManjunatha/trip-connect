@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { TripGroup, GroupMember, Contact } from '../types';
+import { TripGroup, Contact } from '../types';
 import { PlusIcon, PencilSquareIcon, TrashIcon, UserGroupIcon, MapPinIcon, CalendarIcon, CurrencyDollarIcon, UserPlusIcon, ClockIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { isAdmin } from '../utils/roles';
 import { useNavigate } from 'react-router-dom';
-import { group as groupOverview, groupExpenses, groupItinerary } from '../ux';
-import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
+import { group as groupOverview, groupExpenses, groupItinerary, groupEdit, groupNew } from '../ux';
+import { ActionSheet, Button, CreateFAB, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Input } from '../components/ui';
 
 const statusColors: Record<string, string> = {
   PLANNING: 'bg-blue-100 text-blue-800',
@@ -24,19 +24,8 @@ const Groups: React.FC = () => {
   const [groups, setGroups] = useState<TripGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
-  const [showModal, setShowModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<TripGroup | null>(null);
-  const [editingGroup, setEditingGroup] = useState<TripGroup | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    destination: '',
-    startDate: '',
-    endDate: '',
-    budget: '',
-    status: 'PLANNING',
-  });
   const [searchTerm, setSearchTerm] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
@@ -76,66 +65,6 @@ const Groups: React.FC = () => {
       setContacts(Array.isArray(contactsData) ? contactsData : []);
     } catch (error) {
       console.error('Failed to fetch contacts:', error);
-    }
-  };
-
-  const handleOpenModal = (group?: TripGroup) => {
-    if (group) {
-      setEditingGroup(group);
-      setFormData({
-        name: group.name,
-        description: group.description || '',
-        destination: group.destination || '',
-        startDate: group.startDate ? group.startDate.split('T')[0] : '',
-        endDate: group.endDate ? group.endDate.split('T')[0] : '',
-        budget: group.budget?.toString() || '',
-        status: group.status,
-      });
-    } else {
-      setEditingGroup(null);
-      setFormData({
-        name: '',
-        description: '',
-        destination: '',
-        startDate: '',
-        endDate: '',
-        budget: '',
-        status: 'PLANNING',
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        name: formData.name,
-        description: formData.description || undefined,
-        destination: formData.destination || undefined,
-        startDate: formData.startDate || undefined,
-        endDate: formData.endDate || undefined,
-        budget: formData.budget ? parseFloat(formData.budget) : undefined,
-        status: formData.status,
-      };
-      console.log('Submitting group payload:', payload);
-
-      if (editingGroup) {
-        await api.put(`/groups/${editingGroup.id}`, payload);
-        toast.success('Trip group updated successfully');
-      } else {
-        await api.post('/groups', payload);
-        toast.success('Trip created successfully');
-      }
-      handleCloseModal();
-      fetchGroups();
-    } catch (error: any) {
-      console.error('Group submit error:', error.response?.data);
-      toast.error(error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'Failed to save group');
     }
   };
 
@@ -226,7 +155,7 @@ const Groups: React.FC = () => {
         action={
           isAdmin(user) ? (
             <span className="hidden md:inline-block">
-              <Button onClick={() => handleOpenModal()} leftIcon={<PlusIcon className="h-5 w-5" />}>
+              <Button onClick={() => navigate(groupNew())} leftIcon={<PlusIcon className="h-5 w-5" />}>
                 New
               </Button>
             </span>
@@ -234,7 +163,7 @@ const Groups: React.FC = () => {
         }
       />
       {isAdmin(user) && (
-        <CreateFAB label="Add trip" onClick={() => handleOpenModal()} />
+        <CreateFAB label="Add trip" onClick={() => navigate(groupNew())} />
       )}
 
       <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search groups" />
@@ -383,7 +312,7 @@ const Groups: React.FC = () => {
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleOpenModal(group);
+                          navigate(groupEdit(group.id));
                         }}
                         variant="outline"
                         size="sm"
@@ -413,7 +342,7 @@ const Groups: React.FC = () => {
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No trips found</p>
           <Button
-            onClick={() => handleOpenModal()}
+            onClick={() => navigate(groupNew())}
             variant="ghost"
             className="mt-4"
           >
@@ -421,109 +350,6 @@ const Groups: React.FC = () => {
           </Button>
         </div>
       )}
-
-      {/* Modal */}
-      <Modal
-        open={showModal}
-        onClose={handleCloseModal}
-        onAfterClose={() => {
-          setEditingGroup(null);
-          setFormData({
-            name: '',
-            description: '',
-            destination: '',
-            startDate: '',
-            endDate: '',
-            budget: '',
-            status: 'PLANNING',
-          });
-        }}
-        title={editingGroup ? 'Edit Trip' : 'Create New Trip'}
-        size="md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Trip Name" required>
-            <Input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Summer Vacation 2024"
-            />
-          </FormField>
-          <FormField label="Destination">
-            <Input
-              type="text"
-              value={formData.destination}
-              onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-              placeholder="e.g., Paris, France"
-            />
-          </FormField>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Start Date">
-              <Input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              />
-            </FormField>
-            <FormField label="End Date">
-              <Input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              />
-            </FormField>
-          </div>
-          <FormField label="Budget">
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.budget}
-              onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-              placeholder="0.00"
-            />
-          </FormField>
-          <FormField label="Status">
-            <Select
-              value={formData.status}
-              onChange={(value) => setFormData({ ...formData, status: value })}
-              options={[
-                { value: 'PLANNING', label: 'Planning' },
-                { value: 'CONFIRMED', label: 'Confirmed' },
-                { value: 'ONGOING', label: 'Ongoing' },
-                { value: 'COMPLETED', label: 'Completed' },
-                { value: 'CANCELLED', label: 'Cancelled' },
-              ]}
-            />
-          </FormField>
-          <FormField label="Description">
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="Trip details..."
-            />
-          </FormField>
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCloseModal}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-            >
-              {editingGroup ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       <ActionSheet open={showActions} onClose={closeActions} title={selectedGroup ? selectedGroup.name : 'Actions'}>
         <div className="space-y-2">
@@ -578,7 +404,7 @@ const Groups: React.FC = () => {
                   if (!selectedGroup) return;
                   const g = selectedGroup;
                   closeActions();
-                  handleOpenModal(g);
+                  navigate(groupEdit(g.id));
                 }}
                 className="w-full min-h-touch rounded-xl bg-white py-3 text-[17px] font-medium text-gray-900 active:bg-gray-50 flex items-center"
               >
@@ -676,7 +502,7 @@ const Groups: React.FC = () => {
               type="text"
               placeholder="Search contacts..."
               value={memberSearchTerm}
-              onChange={(e) => setMemberSearchTerm(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMemberSearchTerm(e.target.value)}
               className="mb-3"
             />
             <div className="space-y-2 max-h-64 overflow-y-auto">

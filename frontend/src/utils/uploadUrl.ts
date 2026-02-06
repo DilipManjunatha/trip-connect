@@ -16,7 +16,7 @@ export function getUploadUrl(filePath: string | null | undefined): string | null
  * Opens an attachment in a new tab by fetching it (so the service worker can cache it)
  * and then opening the response as a blob URL. Enables offline viewing after first open.
  */
-export async function openAttachment(url: string | null, fileName?: string | null): Promise<void> {
+export async function openAttachment(url: string | null, _fileName?: string | null): Promise<void> {
   if (!url) return;
   try {
     const res = await fetch(url, { credentials: 'include' });

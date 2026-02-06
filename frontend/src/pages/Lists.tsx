@@ -5,11 +5,13 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, CheckIcon, QueueListIcon } from 
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { ActionSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { ActionSheet, BottomSheet, Button, CreateFAB, FormField, GroupedList, LargeTitleHeader, ListRow, Modal, SearchField, Select, Input } from '../components/ui';
 
 const Lists: React.FC = () => {
+  const isMobile = useIsMobile();
   const [lists, setLists] = useState<List[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [_contacts, setContacts] = useState<Contact[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
@@ -379,23 +381,97 @@ const Lists: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      <Modal
-        open={showModal}
-        onClose={handleCloseModal}
-        onAfterClose={() => {
-          setEditingList(null);
-          setFormData({
-            name: '',
-            description: '',
-            isAutomatic: false,
-            tagId: '',
-          });
-          setShowDescription(false);
-        }}
-        title={editingList ? 'Edit List' : 'Create New List'}
-        size="md"
-      >
+      {isMobile ? (
+        <BottomSheet
+          open={showModal}
+          onClose={handleCloseModal}
+          onAfterClose={() => {
+            setEditingList(null);
+            setFormData({
+              name: '',
+              description: '',
+              isAutomatic: false,
+              tagId: '',
+            });
+            setShowDescription(false);
+          }}
+          title={editingList ? 'Edit List' : 'Create New List'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="List Name" required>
+            <Input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., VIP Contacts, Family"
+            />
+          </FormField>
+          {showDescription ? (
+            <FormField label="Description">
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                placeholder="Optional description"
+              />
+            </FormField>
+          ) : (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setShowDescription(true)}>
+              <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add description (optional)
+            </Button>
+          )}
+          <div className="space-y-2">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={formData.isAutomatic}
+                onChange={(e) => setFormData({ ...formData, isAutomatic: e.target.checked })}
+                className="rounded border-gray-300 text-blue-600"
+              />
+              <span className="ml-2 text-sm text-gray-700">Automatic List</span>
+            </label>
+          </div>
+          {formData.isAutomatic && (
+            <FormField label="Select Tag">
+              <Select
+                value={formData.tagId}
+                onChange={(value) => setFormData({ ...formData, tagId: value })}
+                options={[
+                  { value: '', label: 'Choose a tag...' },
+                  ...tags.map(tag => ({ value: tag.id, label: tag.name }))
+                ]}
+                placeholder="Choose a tag..."
+              />
+            </FormField>
+          )}
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">{editingList ? 'Update' : 'Create'}</Button>
+          </div>
+        </form>
+        </BottomSheet>
+      ) : (
+        <Modal
+          open={showModal}
+          onClose={handleCloseModal}
+          onAfterClose={() => {
+            setEditingList(null);
+            setFormData({
+              name: '',
+              description: '',
+              isAutomatic: false,
+              tagId: '',
+            });
+            setShowDescription(false);
+          }}
+          title={editingList ? 'Edit List' : 'Create New List'}
+          size="md"
+        >
         <form onSubmit={handleSubmit} className="space-y-4">
           <FormField label="List Name" required>
             <Input
@@ -473,7 +549,8 @@ const Lists: React.FC = () => {
             </Button>
           </div>
         </form>
-      </Modal>
+        </Modal>
+      )}
 
       <ActionSheet open={showActions} onClose={closeActions} title={selectedList ? selectedList.name : 'Actions'}>
         <div className="space-y-2">

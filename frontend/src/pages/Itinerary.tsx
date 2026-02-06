@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import { useAuth } from '../context/AuthContext';
 import { useTripFromRoute } from '../context/TripContext';
-import { Button, CreateFAB, Input, Modal, FormField } from '../components/ui';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Button, BottomSheet, CreateFAB, Input, Modal, FormField } from '../components/ui';
 import type { ItineraryStop } from '../components/ItineraryFlowchart';
 
 const ItineraryFlowchart = lazy(() => import('../components/ItineraryFlowchart'));
@@ -40,13 +41,14 @@ function toFlowchartStop(item: Itinerary): ItineraryStop {
 }
 
 const Itinerary: React.FC = () => {
-  const { user } = useAuth();
+  useAuth();
   const navigate = useNavigate();
   const { id: idFromParams } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const { groupId: groupIdFromContext } = useTripFromRoute();
   const groupId = idFromParams ?? groupIdFromContext ?? searchParams.get('groupId');
 
+  const isMobile = useIsMobile();
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
@@ -337,105 +339,104 @@ const Itinerary: React.FC = () => {
         </Suspense>
       )}
 
-      {/* Modal */}
-      <Modal
-        open={showModal}
-        onClose={handleCloseModal}
-        onAfterClose={() => {
-          setEditingItinerary(null);
-          setFormData({
-            title: '',
-            description: '',
-            location: '',
-            startTime: '',
-            endTime: '',
-            cost: '',
-            notes: '',
-          });
-        }}
-        title={editingItinerary ? 'Edit Itinerary Item' : 'Add New Activity'}
-        size="md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Title" required>
-            <Input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Visit Eiffel Tower"
-            />
-          </FormField>
-          <FormField label="Location">
-            <Input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="e.g., Champ de Mars, Paris"
-            />
-          </FormField>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Start Time" required>
-              <Input
-                type="datetime-local"
-                required
-                value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-              />
+      {isMobile ? (
+        <BottomSheet
+          open={showModal}
+          onClose={handleCloseModal}
+          onAfterClose={() => {
+            setEditingItinerary(null);
+            setFormData({
+              title: '',
+              description: '',
+              location: '',
+              startTime: '',
+              endTime: '',
+              cost: '',
+              notes: '',
+            });
+          }}
+          title={editingItinerary ? 'Edit Itinerary Item' : 'Add New Activity'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Title" required>
+              <Input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g., Visit Eiffel Tower" />
             </FormField>
-            <FormField label="End Time">
-              <Input
-                type="datetime-local"
-                value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-              />
+            <FormField label="Location">
+              <Input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="e.g., Champ de Mars, Paris" />
             </FormField>
-          </div>
-          <FormField label="Cost">
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.cost}
-              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-              placeholder="0.00"
-            />
-          </FormField>
-          <FormField label="Description">
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="Activity details..."
-            />
-          </FormField>
-          <FormField label="Notes">
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="Additional notes..."
-            />
-          </FormField>
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCloseModal}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-            >
-              {editingItinerary ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="Start Time" required>
+                <Input type="datetime-local" required value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} />
+              </FormField>
+              <FormField label="End Time">
+                <Input type="datetime-local" value={formData.endTime} onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} />
+              </FormField>
+            </div>
+            <FormField label="Cost">
+              <Input type="number" step="0.01" value={formData.cost} onChange={(e) => setFormData({ ...formData, cost: e.target.value })} placeholder="0.00" />
+            </FormField>
+            <FormField label="Description">
+              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Activity details..." />
+            </FormField>
+            <FormField label="Notes">
+              <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Additional notes..." />
+            </FormField>
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">{editingItinerary ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </BottomSheet>
+      ) : (
+        <Modal
+          open={showModal}
+          onClose={handleCloseModal}
+          onAfterClose={() => {
+            setEditingItinerary(null);
+            setFormData({
+              title: '',
+              description: '',
+              location: '',
+              startTime: '',
+              endTime: '',
+              cost: '',
+              notes: '',
+            });
+          }}
+          title={editingItinerary ? 'Edit Itinerary Item' : 'Add New Activity'}
+          size="md"
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Title" required>
+              <Input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g., Visit Eiffel Tower" />
+            </FormField>
+            <FormField label="Location">
+              <Input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="e.g., Champ de Mars, Paris" />
+            </FormField>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="Start Time" required>
+                <Input type="datetime-local" required value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} />
+              </FormField>
+              <FormField label="End Time">
+                <Input type="datetime-local" value={formData.endTime} onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} />
+              </FormField>
+            </div>
+            <FormField label="Cost">
+              <Input type="number" step="0.01" value={formData.cost} onChange={(e) => setFormData({ ...formData, cost: e.target.value })} placeholder="0.00" />
+            </FormField>
+            <FormField label="Description">
+              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Activity details..." />
+            </FormField>
+            <FormField label="Notes">
+              <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Additional notes..." />
+            </FormField>
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">{editingItinerary ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

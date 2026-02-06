@@ -18,7 +18,8 @@ import {
 import toast from 'react-hot-toast';
 import DelightfulError from '../components/DelightfulError';
 import EmptyState from '../components/EmptyState';
-import { Button, CreateFAB, Input, Modal, FormField, Select } from '../components/ui';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Button, BottomSheet, CreateFAB, Input, Modal, FormField, Select } from '../components/ui';
 import { groupTicketCard } from '../ux/routes';
 import { getUploadUrl, openAttachment } from '../utils/uploadUrl';
 import type { Ticket, TicketType } from '../types';
@@ -69,7 +70,8 @@ const CATEGORY_ORDER = [
 const TripTickets: React.FC = () => {
   const { id: groupId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { trip } = useTripFromRoute();
+  useTripFromRoute();
+  const isMobile = useIsMobile();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [networkError, setNetworkError] = useState(false);
@@ -334,61 +336,72 @@ const TripTickets: React.FC = () => {
         </div>
       )}
 
-      {/* Add/Edit modal */}
-      <Modal
-        open={showAddModal}
-        onClose={() => { setShowAddModal(false); setFile(null); }}
-        title={editingTicket ? 'Edit ticket' : 'Add ticket'}
-        size="md"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Title" required>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g. Flight to Paris"
-              required
-            />
-          </FormField>
-          <FormField label="Category">
-            <Select
-              value={formData.category}
-              onChange={(v) => setFormData({ ...formData, category: v })}
-              options={
-                formData.category && !TICKET_CATEGORIES.some((c) => c.value === formData.category)
-                  ? [...TICKET_CATEGORIES, { value: formData.category, label: formData.category }]
-                  : TICKET_CATEGORIES
-              }
-              placeholder="Select category"
-            />
-          </FormField>
-          <FormField label="Type">
-            <Select
-              value={formData.type}
-              onChange={(v) => setFormData({ ...formData, type: v as TicketType })}
-              options={TICKET_TYPES}
-            />
-          </FormField>
-          {!editingTicket && (
-            <FormField label="File (PDF or image)">
-              <input
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg,.webp"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary-50 file:text-primary-700"
+      {isMobile ? (
+        <BottomSheet
+          open={showAddModal}
+          onClose={() => { setShowAddModal(false); setFile(null); }}
+          title={editingTicket ? 'Edit ticket' : 'Add ticket'}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Title" required>
+              <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Flight to Paris" required />
+            </FormField>
+            <FormField label="Category">
+              <Select
+                value={formData.category}
+                onChange={(v) => setFormData({ ...formData, category: v })}
+                options={formData.category && !TICKET_CATEGORIES.some((c) => c.value === formData.category) ? [...TICKET_CATEGORIES, { value: formData.category, label: formData.category }] : TICKET_CATEGORIES}
+                placeholder="Select category"
               />
             </FormField>
-          )}
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1">
-              {editingTicket ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+            <FormField label="Type">
+              <Select value={formData.type} onChange={(v) => setFormData({ ...formData, type: v as TicketType })} options={TICKET_TYPES} />
+            </FormField>
+            {!editingTicket && (
+              <FormField label="File (PDF or image)">
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary-50 file:text-primary-700" />
+              </FormField>
+            )}
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">{editingTicket ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </BottomSheet>
+      ) : (
+        <Modal
+          open={showAddModal}
+          onClose={() => { setShowAddModal(false); setFile(null); }}
+          title={editingTicket ? 'Edit ticket' : 'Add ticket'}
+          size="md"
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="Title" required>
+              <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Flight to Paris" required />
+            </FormField>
+            <FormField label="Category">
+              <Select
+                value={formData.category}
+                onChange={(v) => setFormData({ ...formData, category: v })}
+                options={formData.category && !TICKET_CATEGORIES.some((c) => c.value === formData.category) ? [...TICKET_CATEGORIES, { value: formData.category, label: formData.category }] : TICKET_CATEGORIES}
+                placeholder="Select category"
+              />
+            </FormField>
+            <FormField label="Type">
+              <Select value={formData.type} onChange={(v) => setFormData({ ...formData, type: v as TicketType })} options={TICKET_TYPES} />
+            </FormField>
+            {!editingTicket && (
+              <FormField label="File (PDF or image)">
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary-50 file:text-primary-700" />
+              </FormField>
+            )}
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">{editingTicket ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
