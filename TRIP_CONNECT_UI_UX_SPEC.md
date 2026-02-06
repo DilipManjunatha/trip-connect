@@ -136,8 +136,8 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 
 ### 6.1 People (Contacts, Tags, Smart Lists) — Admin-only
 
-- **Contacts:** List with search/sort; row shows name, primary contact, tags. Tap → detail (fields, tags, actions). Create/edit via modal. Standard fields: name, phone, email, address, notes.
-- **Tags:** List of tags with counts and color; create/edit; tapping a tag opens the corresponding smart list.
+- **Contacts:** List with search/sort; row shows name, primary contact, tags. Tap → dedicated edit page. Create/edit on **dedicated page** (`/contacts/new`, `/contacts/:id/edit`). Standard fields: name, phone, email, address, notes.
+- **Tags:** List of tags with counts and color; create/edit via modal (desktop) or bottom sheet (mobile); tapping a tag opens the corresponding smart list.
 - **Smart lists:** List of lists (auto from tag + manual); name, source tag if any, member count. **Detail:** Members grouped by tag (or single list); **add/remove contacts** (e.g. “Add to list” with contact picker; “Remove from list”). Indicate when list is tag-driven vs manually edited.
 
 ### 6.2 Trips (Groups)
@@ -162,7 +162,7 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 
 - **Board:** Columns (e.g. To Do, In Progress, Done); **draggable or actionable cards** (task/reminder for the trip).
 - **Card:** Title, optional description, assignee if needed.
-- **Create/edit:** Modal or inline form.
+- **Create/edit:** Modal (desktop) or bottom sheet on mobile; focus trap and restore in modals/sheets.
 - **Layout:** BOARD (full-width).
 
 ### 6.6 Trip: Tickets & Smart Info Cards
@@ -261,7 +261,7 @@ Layout component(s) accept a layout ID and adjust structure; on mobile, context 
 
 ## 9. Accessibility
 
-- **Focus:** Visible focus ring (from tokens); trap focus in modals; restore focus on close.
+- **Focus:** Visible focus ring (from tokens); trap focus in modals and bottom sheets; restore focus on close.
 - **Semantics:** Use semantic HTML (nav, main, header, section, button, a); ARIA where needed (e.g. live regions, labels).
 - **Motion:** Respect `prefers-reduced-motion` for transitions and animations.
 - **Keyboard:** All primary flows keyboard-accessible; skip link to main content where applicable.
