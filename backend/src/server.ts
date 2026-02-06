@@ -14,13 +14,9 @@ import contactRoutes from './routes/contacts';
 import tagRoutes from './routes/tags';
 import listRoutes from './routes/lists';
 import groupRoutes from './routes/groups';
-import itineraryRoutes from './routes/itineraries';
-import expenseRoutes from './routes/expenses';
 import messageRoutes from './routes/messages';
 import userRoutes from './routes/users';
 import noteRoutes from './routes/notes';
-import kanbanRoutes from './routes/kanban';
-import ticketRoutes from './routes/tickets';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -275,16 +271,12 @@ io.on('connection', async (socket: Socket) => {
 // Make io available to routes
 app.set('socketio', io);
 
-// Routes
+// Routes — nested group routes (expenses, itineraries, kanban, tickets) are mounted inside groups router
 app.use('/api/auth', authRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/groups', groupRoutes);
-app.use('/api/groups/:groupId/itineraries', itineraryRoutes);
-app.use('/api/groups/:groupId/expenses', expenseRoutes);
-app.use('/api/groups/:groupId/kanban', kanbanRoutes);
-app.use('/api/groups/:groupId/tickets', ticketRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notes', noteRoutes);

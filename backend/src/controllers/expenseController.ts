@@ -46,6 +46,55 @@ export const getExpenses = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getExpense = async (req: AuthRequest, res: Response) => {
+  try {
+    const { groupId, expenseId } = req.params;
+    const userId = req.user!.id;
+
+    const groupMember = await prisma.groupMember.findFirst({
+      where: {
+        groupId,
+        OR: [
+          { userId },
+          { contact: { createdById: userId } }
+        ]
+      }
+    });
+
+    if (!groupMember) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have access to this group'
+      });
+    }
+
+    const expense = await prisma.expense.findFirst({
+      where: {
+        id: expenseId,
+        groupId
+      }
+    });
+
+    if (!expense) {
+      return res.status(404).json({
+        success: false,
+        message: 'Expense not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { expense }
+    });
+  } catch (error) {
+    console.error('Get expense error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch expense'
+    });
+  }
+};
+
 export const createExpense = async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);

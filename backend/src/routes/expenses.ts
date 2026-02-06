@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getExpenses,
+  getExpense,
   createExpense,
   updateExpense,
   deleteExpense,
@@ -14,6 +15,7 @@ const router = Router({ mergeParams: true });
 router.use(authenticate);
 
 router.get('/', getExpenses);
+router.get('/:expenseId', getExpense);
 router.post('/', expenseValidation, createExpense);
 router.put('/:expenseId', expenseValidation, updateExpense);
 router.delete('/:expenseId', deleteExpense);

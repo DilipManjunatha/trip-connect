@@ -10,7 +10,6 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router({ mergeParams: true });
 
-// All routes require authentication
 router.use(authenticate);
 
 router.get('/', getItineraries);
